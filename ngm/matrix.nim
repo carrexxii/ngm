@@ -1,11 +1,17 @@
 import common, vector
 
-type Mat4* = array[4, array[4, float32]]
+type Mat4* = array[4, Vec4]
 
 const Mat4Ident*: Mat4 = [[1, 0, 0, 0],
                           [0, 1, 0, 0],
                           [0, 0, 1, 0],
                           [0, 0, 0, 1]]
+
+proc `$`*(m: Mat4): string =
+    &"[[{m[0][0]:.2f}, {m[0][1]:.2f}, {m[0][2]:.2f}, {m[0][3]:.2f}],\n" &
+    &" [{m[1][0]:.2f}, {m[1][1]:.2f}, {m[1][2]:.2f}, {m[1][3]:.2f}],\n" &
+    &" [{m[2][0]:.2f}, {m[2][1]:.2f}, {m[2][2]:.2f}, {m[2][3]:.2f}],\n" &
+    &" [{m[3][0]:.2f}, {m[3][1]:.2f}, {m[3][2]:.2f}, {m[3][3]:.2f}]]"
 
 #[ -------------------------------------------------------------------- ]#
 
@@ -58,9 +64,12 @@ proc `*`*(m; v4) : Vec4 = mulv(m.addr, v4.addr, result.addr)
 proc `*`*(m; v3) : Vec3 = mulv3(m.addr, v3.addr, 0, result.addr)
 proc `*`*(m; s)  : Mat4 = scale_uni(m.addr, s)
 
-proc `*=`*(m1: var Mat4; m2)  = m1 = m1 * m2
-proc `*=`*(m: var Mat4; s)  = m = m * s
-proc `*=`*(m: var Mat4; v3) = scale(m.addr, v3.addr)
+proc `*=`*(m1: var Mat4; m2) = m1 = m1 * m2
+proc `*=`*(m : var Mat4; s ) = m  = m * s
+proc `*=`*(m : var Mat4; v3) = scale(m.addr, v3.addr)
+
+proc `+`*(m; v3): Mat4 = translate_to(m.addr, v3.addr, result.addr)
+proc `+=`*(m: var Mat4; v3) = translate(m.addr, v3.addr)
 
 proc scale*(m: var Mat4; v3) = scale(m.addr, v3.addr)
 

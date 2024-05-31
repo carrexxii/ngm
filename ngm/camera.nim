@@ -7,9 +7,21 @@ type
         Perspective
 
     Camera* = object
-        kind*: CameraKind
         view*: Mat4
         proj*: Mat4
+        pos* : Vec3
+        case kind*: CameraKind
+        of Perspective:
+            dir*: Vec3
+            up* : Vec3
+        of Orthogonal:
+            discard
+
+    PanDirection* = enum
+        Up
+        Down
+        Left
+        Right
 
 using
     dst : ptr Mat4
@@ -65,13 +77,27 @@ proc camera*(left, right, bottom, top, znear, zfar: float32): Camera =
            view: Mat4Ident,
            proj: orthogonal(left, right, bottom, top, znear, zfar))
 
-proc camera*(yfov, aspect, znear, zfar: float32): Camera =
+proc camera*(yfov, aspect, znear, zfar: float32; pos, dir, up = vec(0, 0, 0)): Camera =
     Camera(kind: Perspective,
+           pos : pos,
+           dir : dir,
+           up  : up,
            view: Mat4Ident,
            proj: perspective(yfov, aspect, znear, zfar))
 
 proc look_at*(cam: var Camera; eye, centre, up: Vec3) = lookat(eye.addr, centre.addr, up.addr, cam.view.addr)
 proc look*(cam: var Camera; eye, dir, up: Vec3)       = look(eye.addr, dir.addr, up.addr, cam.view.addr)
 proc look*(cam: var Camera; eye, dir: Vec3)           = look_anyup(eye.addr, dir.addr, cam.view.addr)
+
+proc update*(cam: var Camera) =
+    cam.look(cam.pos, cam.dir, cam.up)
+
+proc pan*(cam: var Camera; dir: PanDirection) =
+    let vdir = case dir
+    of Up   :  cam.up
+    of Down : -cam.up
+    of Left : -cross(cam.dir, cam.up)
+    of Right:  cross(cam.dir, cam.up)
+    cam.pos += 0.1*(normalized vdir)
 
 {.pop.}
