@@ -4,20 +4,28 @@ from std/strutils import to_lower
 # TODO: https://github.com/stavenko/nim-glm/blob/47d5f8681f3c462b37e37ebc5e7067fa5cba4d16/glm/vec.nim#L193
 
 type
-    V2[T] = object
-        x*, y*: T
-    V3[T] = object
-        x*, y*, z*: T
-    V4[T] = object
-        x*, y*, z*, w*: T
+    Vector[N: static int, T] = array[N, T]
 
-    Vec2* = V2[float32]
-    Vec3* = V3[float32]
-    Vec4* = V4[float32]
+    Vec2* = Vector[2, float32]
+    Vec3* = Vector[3, float32]
+    Vec4* = Vector[4, float32]
 
-func `$`*[T](v: V2[T]): string = &"({v.x}, {v.y})"
-func `$`*[T](v: V3[T]): string = &"({v.x}, {v.y}, {v.z})"
-func `$`*[T](v: V4[T]): string = &"({v.x}, {v.y}, {v.z}, {v.w})"
+func vec*(x, y      : float32): Vec2 = [x, y]
+func vec*(x, y, z   : float32): Vec3 = [x, y, z]
+func vec*(x, y, z, w: float32): Vec4 = [x, y, z, w]
+
+func `$`*[T](v: Vector[2, T]): string = &"({v[0]}, {v[1]})"
+func `$`*[T](v: Vector[3, T]): string = &"({v[0]}, {v[1]}, {v[2]})"
+func `$`*[T](v: Vector[4, T]): string = &"({v[0]}, {v[1]}, {v[2]}, {v[3]})"
+
+const
+    Vec2Zero* = vec(0, 0)
+    Vec3Zero* = vec(0, 0, 0)
+    Vec4Zero* = vec(0, 0, 0, 0)
+
+    XAxis* = vec(1, 0, 0)
+    YAxis* = vec(0, 1, 0)
+    ZAxis* = vec(0, 0, 1)
 
 type GLMFnKind = enum
     VecVec_Vec
