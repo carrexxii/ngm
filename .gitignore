@@ -1,1 +1,6 @@
-cglm/
+*
+!*.*
+!*/
+
+nimcache/
+testresults/

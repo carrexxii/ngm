@@ -14,9 +14,9 @@ func vec*(x, y      : float32): Vec2 = [x, y]
 func vec*(x, y, z   : float32): Vec3 = [x, y, z]
 func vec*(x, y, z, w: float32): Vec4 = [x, y, z, w]
 
-func `$`*[T](v: Vector[2, T]): string = &"({v[0]}, {v[1]})"
-func `$`*[T](v: Vector[3, T]): string = &"({v[0]}, {v[1]}, {v[2]})"
-func `$`*[T](v: Vector[4, T]): string = &"({v[0]}, {v[1]}, {v[2]}, {v[3]})"
+func `$`*(v: Vec2): string = &"({v[0]}, {v[1]})"
+func `$`*(v: Vec3): string = &"({v[0]}, {v[1]}, {v[2]})"
+func `$`*(v: Vec4): string = &"({v[0]}, {v[1]}, {v[2]}, {v[3]})"
 
 const
     Vec2Zero* = vec(0, 0)

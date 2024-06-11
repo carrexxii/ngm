@@ -1,5 +1,6 @@
+from std/os import `/`
 from std/strformat import `&`
 export `&`
 
 const CGLMDir* {.strdefine.} = "../lib/cglm/include/cglm"
-const CGLMHeader* = CGLMDir & "/cglm.h"
+const CGLMHeader* = CGLMDir / "cglm.h"
