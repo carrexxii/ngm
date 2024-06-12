@@ -1,5 +1,5 @@
 import
-    std/[macros, strutils],
+    std/[macros, strutils, sequtils],
     common
 from std/algorithm import product
 
@@ -58,11 +58,44 @@ macro gen_algebra(comps: varargs[untyped]): untyped =
     result.add (nnkConstSection.newTree full_basis)
     # echo repr result[0]
 
-gen_algebra(e0, e1, e2, e3, e01, e20, e12, e012)
+gen_algebra(e0, e1, e2, e01, e20, e12, e012)
 # when defined PGA2D:
 #     gen_algebra(e0, e1, e2, e3, e01, e20, e12, e012)
 # elif defined PGA3D:
 #     gen_algebra(e0, e1, e2, e3, e01, e02, e03, e12, e31, e23, e021, e013, e032, e123, e0123)
+
+template build_ctor(name: string; param_list: openArray[string]): untyped =
+    var params = newNimNode nnkFormalParams
+    var ctor   = newNimNode nnkObjConstr
+    params.add (ident name)
+    ctor.add   (ident name)
+
+    for param in param_list:
+        let field = ident $(name_of_basis $param)
+        ctor.add nnkExprColonExpr.newTree(
+            field,
+            nnkCommand.newTree(
+                ident $param,
+                field,
+            )
+        )
+        params.add nnkIdentDefs.newTree(
+            field,
+            nnkInfix.newTree(ident "|", ident $param, ident $Real),
+            newLit 0,
+        )
+
+    nnkStmtList.newTree(
+        nnkFuncDef.newTree(
+            nnkPostfix.newTree(ident "*", ident $(to_lower_ascii $name)),
+            newEmptyNode(),
+            newEmptyNode(),
+            params,
+            newEmptyNode(),
+            newEmptyNode(),
+            nnkStmtList.newTree ctor
+        )
+    )
 
 macro gen_blades(blades: varargs[untyped]): untyped =
     var blade_list: seq[string] # Need this for operator resolution without `AllBlades` defined yet
@@ -110,6 +143,8 @@ macro gen_blades(blades: varargs[untyped]): untyped =
             `blade`,
             newEmptyNode()
         )
+
+        result.add build_ctor($blade, FullBasis.filter ((basis: string) => basis.len - 2 == i))
 
         blade_list.add $blade
 
