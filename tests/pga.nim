@@ -16,5 +16,9 @@ assert 1'e1 + 1'e1 == 2'e1
 assert 2'e1 + 4'e1 == 6'e1
 assert 3'e2 + 4'e2 == 7'e2
 
+echo 7'e0
 echo 1'e0 + 1'e1
-# assert $(1'e0 + 1'e1) == "1'e0 + 1'e1"
+# echo 2'e0 + 43'e1 + 4'e2
+echo 1'e1 + 3'e12
+# echo 1'e123 + 3'e1 + 5'e0
+# echo 1'e20 + 3'e01
