@@ -1,7 +1,6 @@
 import
-    std/[macros, strutils, sequtils],
+    std/[macros, strutils, sequtils, algorithm],
     common
-from std/algorithm import product
 
 type
     Real  = float
@@ -68,41 +67,25 @@ gen_algebra(e0, e1, e2, e01, e20, e12, e012)
 # elif defined PGA3D:
 #     gen_algebra(e0, e1, e2, e3, e01, e02, e03, e12, e31, e23, e021, e013, e032, e123, e0123)
 
-# `morph_basis` is used for multivec
-func build_ctor(name: string; param_list: openArray[string]; morph_basis = true): NimNode {.compileTime.} =
-    var params = newNimNode nnkFormalParams
+func build_ctor(name: string; param_list: openArray[string]): NimNode {.compileTime.} =
+    var params = @[ident name]
     var ctor   = newNimNode nnkStmtList
-    params.add(ident name)
+    for (i, param) in enumerate param_list:
+        let field = ident(name_of_basis $param)
+        ctor.add quote do:
+            result.`field` = `field`
 
-    for param in param_list:
-        let field = if morph_basis: ident(name_of_basis $param)
-                    else          : ident(blade_abbrev  $param)
-        ctor.add new_assignment(
-            newDotExpr(ident "result", field),
-            field
-        )
+        let param = ident param
+        params.add newIdentDefs(field, param, param.newCall(newLit 0))
 
-        let kind = ident $param
-        params.add nnkIdentDefs.newTree(
-            field,
-            kind,
-            if morph_basis or $param == $Real:
-                newDotExpr(newLit 0, kind)
-            else:
-                nnkCall.newTree(ident $param),
-        )
-
-    result = nnkStmtList.newTree(
-        nnkFuncDef.newTree(
-            nnkPostfix.newTree(ident "*", ident $(to_lower_ascii $name)),
-            newEmptyNode(),
-            newEmptyNode(),
-            params,
-            newEmptyNode(),
-            newEmptyNode(),
-            nnkStmtList.newTree ctor
-        )
+    let name = ident $(to_lower_ascii $name)
+    result = newProc(name.postfix "*",
+        proc_type = nnkFuncDef,
+        pragmas   = nnkPragma.newTree(ident "inline"),
+        params    = params,
+        body      = ctor,
     )
+    debug_echo repr result
 
 macro gen_blades(blades: varargs[untyped]): untyped =
     var blade_list: seq[string] # Need this for operator resolution without `AllBlades` defined yet
@@ -213,9 +196,29 @@ macro gen_blades(blades: varargs[untyped]): untyped =
             )
         )
     )
-    # result.add build_ctor("Multivector", $Real & blade_list, morph_basis = false)
-    result.add build_ctor("Multivector", $Real & @FullBasis)
-    # result.add build_ctor("Multivector", [$Real, "Multivector"], morph_basis = false)
+    result.add build_ctor("Multivector", @FullBasis & $Real)
+
+    # Special blade-based constructor for converters
+    let scalar = ident(blade_abbrev $Real)
+    var mv_params  = @[ident "Multivector",
+                       newIdentDefs(scalar, ident $Real, newLit 0)]
+    var mv_assigns = @[quote do: result.`scalar` = `scalar`]
+    for (i, blade) in enumerate blade_list:
+        let name  = ident(blade_abbrev blade)
+        let blade = ident blade
+        mv_params.add newIdentDefs(name, blade, newCall blade)
+
+        for basis in FullBasis.filter((basis: string) => basis.len - 2 == i):
+            let basis = ident(name_of_basis basis)
+            mv_assigns.add quote do:
+                result.`basis` = `name`.`basis`
+
+    let name = ident "multivector"
+    result.add newProc(name.postfix "*",
+        procType = nnkFuncDef,
+        params   = mv_params,
+        body     = newStmtList mv_assigns,
+    )
 
     # Converters to multivector
     for (i, blade) in enumerate blades:
@@ -268,13 +271,22 @@ macro gen_blades(blades: varargs[untyped]): untyped =
         else:
             blade = ident "Multivector"
 
-        # echo &"{b} -> {sum_blade}"
         let T = ident b[0]; let t = ident(name_of_basis $T)
         let U = ident b[1]; let u = ident(name_of_basis $U)
         let ctor = ident(to_lower_ascii $blade)
         result.add quote("@@") do:
             func `+`*(a: `@@T`; b: `@@U`): `@@blade` =
                 `@@ctor`(`@@t` = a, `@@u` = b)
+
+    # Ops for differing blades
+    for b in product [blade_list, blade_list]:
+        if b[0] == b[1]:
+            continue
+
+        let T = ident b[0]; let t = ident(blade_abbrev b[0])
+        let U = ident b[1]; let u = ident(blade_abbrev b[1])
+        result.add quote("@@") do:
+            func `+`*(a: `@@T`; b: `@@U`): Multivector = multivector(@@t = a, @@u = b)
 
     for blade in blade_list:
         all_blades[2].add(newLit blade)

@@ -22,7 +22,7 @@ echo 7'e0
 echo 1'e0 + 1'e1
 echo 2'e0 + 43'e1 + 4'e2
 echo 1'e1 + 3'e12
-# echo 1'e2 + 2'e2 + 3'e0 + 5'e12
+echo 1'e2 + 2'e2 + 3'e0 + 5'e12
 
 # echo 1'e123 + 3'e1 + 5'e0
 # echo 1'e20 + 3'e01
