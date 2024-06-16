@@ -42,8 +42,8 @@ macro gen_algebra(comps: varargs[untyped]): untyped =
         let name = ident("'" & $basis)
         result.add quote("@@") do:
             type `@@basis`* = distinct Basis
-            template `@@name`*(x: string): @@basis = @@basis (parse_float x)
-            template `$`*(x: @@basis): string = $(Real x) & (repr @@basis)
+            proc `@@name`*(x: string): @@basis {.compileTime.} = @@basis (parse_float x)
+            func `$`*(x: @@basis): string = $(Real x) & (repr @@basis)
 
             func `+`*(a, b: @@basis): @@basis {.borrow.}
             func `-`*(a, b: @@basis): @@basis {.borrow.}
@@ -121,11 +121,10 @@ macro gen_blades(blades: varargs[untyped]): untyped =
         )
     )
     for (i, blade) in enumerate blades:
-        var components = newNimNode nnkRecList
-        for basis in FullBasis:
-            if basis.len - 2 != i:
-                continue
+        let blade_bases = FullBasis.filter((basis: string) => basis.len - 2 == i)
 
+        var components = newNimNode nnkRecList
+        for basis in blade_bases:
             let name = name_of_basis basis
             components.add nnkIdentDefs.newTree(
                 nnkPostfix.newTree(ident "*", ident name),
@@ -139,6 +138,7 @@ macro gen_blades(blades: varargs[untyped]): untyped =
                 nnkCommand.newTree(ident basis, newLit 0)
             )
 
+        # Type definition
         result.add nnkTypeSection.newTree(
             nnkTypeDef.newTree(
                 nnkPostfix.newTree(ident "*", `blade`),
@@ -151,21 +151,42 @@ macro gen_blades(blades: varargs[untyped]): untyped =
             )
         )
 
-        dump_ast_gen:
-            var comps = new_seq_of_cap[`Real`] `blade_count`
+        # Homogeneous operators
+        var fields = nnkStmtList.newTree()
+        for basis in blade_bases:
+            let basis = ident(name_of_basis basis)
+            fields.add quote do:
+                result.`basis` = a.`basis` + b.`basis`
+        result.add newProc(postfix(ident "+", "*"),
+            procType = nnkFuncDef,
+            params = [`blade`,
+                newIdentDefs(ident "a", `blade`),
+                newIdentDefs(ident "b", `blade`),
+            ],
+            body = fields,
+        )
 
-        let blade_bases = FullBasis.filter((basis: string) => basis.len - 2 == i)
+        # Converters to blades
+        for basis in blade_bases:
+            let field = ident(name_of_basis basis)
+            let name  = ident(basis & "_to_" & (to_lower_ascii $blade))
+            let basis = ident basis
+            result.add quote do:
+                converter `name`*(a: `basis`): `blade` =
+                    result.`field` = a
+
+        # Stringingfy / `$`
         let blade_count = blade_bases.len
         var sb = nnkStmtList.newTree(
-            new_var_stmt(ident "comps", quote do: new_seq_of_cap[string] `blade_count`)
+            newVarStmt(ident "comps", quote do: new_seq_of_cap[string] `blade_count`)
         )
         for (j, basis) in enumerate blade_bases:
             let field  = ident(name_of_basis basis)
             let append = if j < blade_bases.len - 1: " + " else: ""
+            let basis  = ident basis
             sb.add quote do:
-                if (Real a.`field`) != 0.0:
-                    # result &= `basis` & `append`
-                    comps.add `basis`
+                if a.`field` != `basis` 0.0:
+                    comps.add $a.`field`
         sb.add quote do:
             result = $`blade` & ": " & (comps.join " + ")
 
@@ -180,6 +201,7 @@ macro gen_blades(blades: varargs[untyped]): untyped =
         result.add build_ctor($blade, FullBasis.filter((basis: string) => basis.len - 2 == i))
         blade_list.add $blade
 
+    # Multivector
     result.add nnkTypeSection.newTree(
         nnkTypeDef.newTree(
             nnkPostFix.newTree(ident "*", ident "Multivector"),
@@ -195,23 +217,63 @@ macro gen_blades(blades: varargs[untyped]): untyped =
     result.add build_ctor("Multivector", $Real & @FullBasis)
     # result.add build_ctor("Multivector", [$Real, "Multivector"], morph_basis = false)
 
-    var sum_blade : NimNode
-    # var prod_blade: string
+    # Converters to multivector
+    for (i, blade) in enumerate blades:
+        let blade_bases = FullBasis.filter((basis: string) => basis.len - 2 == i)
+        let name        = ident((to_lower_ascii $blade) & "_to_multivector")
+        var fb = nnkStmtList.newTree()
+        for basis in blade_bases:
+            let field = ident(name_of_basis basis)
+            fb.add quote do:
+                result.`field` = a.`field`
+
+        result.add newProc(name.postfix "*",
+            procType = nnkConverterDef,
+            params = [ident "Multivector",
+                newIdentDefs(ident "a", `blade`)
+            ],
+            body = fb
+        )
+
+    # Stringify / `$` for Multivector
+    let blade_count = FullBasis.len
+    var sb = nnkStmtList.newTree(
+        newVarStmt(ident "comps", quote do: new_seq_of_cap[string] `blade_count`)
+    )
+    for (j, basis) in enumerate FullBasis:
+        let field  = ident(name_of_basis basis)
+        let append = if j < blade_count - 1: " + " else: ""
+        let basis  = ident basis
+        sb.add quote do:
+            if a.`field` != `basis` 0.0:
+                comps.add $a.`field`
+    sb.add quote do:
+        result = "Multivector: " & (comps.join " + ")
+
+    result.add newProc(postfix(ident "$", "*"),
+        procType = nnkFuncDef,
+        params = [ident "string",
+            newIdentDefs(ident "a", ident "Multivector")
+        ],
+        body = sb
+    )
+
+    var blade: NimNode
     for b in product [@FullBasis, @FullBasis]:
         if b[0] == b[1]:
             continue
 
         if b[0].len == b[1].len:
-            sum_blade = ident blade_list[b[0].len - 2]
+            blade = ident blade_list[b[0].len - 2]
         else:
-            sum_blade = ident "Multivector"
+            blade = ident "Multivector"
 
-        echo &"{b} -> {sum_blade}"
+        # echo &"{b} -> {sum_blade}"
         let T = ident b[0]; let t = ident(name_of_basis $T)
         let U = ident b[1]; let u = ident(name_of_basis $U)
-        let ctor = ident(to_lower_ascii $sum_blade)
+        let ctor = ident(to_lower_ascii $blade)
         result.add quote("@@") do:
-            template `+`*(a: `@@T`; b: `@@U`): `@@sum_blade` =
+            func `+`*(a: `@@T`; b: `@@U`): `@@blade` =
                 `@@ctor`(`@@t` = a, `@@u` = b)
 
     for blade in blade_list:

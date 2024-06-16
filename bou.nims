@@ -20,10 +20,10 @@ let
             src_dir / "main.nim"
         else:
             src_dir / &"{cwd.split('/')[^1]}.nim"
-    debug_flags   = "--hints:off --nimCache:{build_dir} -o:{bin_path} --cc:tcc " &
-                    "--passL:\"-ldl -lm\" --tlsEmulation:on -d:useMalloc"
-    release_flags = "--nimCache:{build_dir} -o:{bin_path} --cc:gcc " &
-                    "-d:release -d:danger"
+    debug_flags   = &"--hints:off --nimCache:{build_dir} -o:{bin_path} --cc:tcc " &
+                     "--passL:\"-ldl -lm\" --tlsEmulation:on -d:useMalloc"
+    release_flags = &"--nimCache:{build_dir} -o:{bin_path} --cc:gcc " &
+                     "-d:release -d:danger"
     post_release = @[""]
 
 #[ -------------------------------------------------------------------- ]#
@@ -70,7 +70,7 @@ task build, "Build the project (debug build)":
     run &"nim c {debug_flags} {entry}"
 
 task release, "Build the project (release build)":
-    run &"nim c {debug_flags} {entry}"
+    run &"nim c {release_flags} {entry}"
     for cmd in post_release:
         run cmd
 
