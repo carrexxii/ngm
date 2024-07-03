@@ -25,15 +25,17 @@ using
     cs, cangle: cfloat
     s ,  angle: float32
 
-{.push header: CGLMHeader.}
+{.emit: CGLMInclude.}
+{.push header: CGLMDir / "mat4.h".}
 proc mul*(m1p, m2p, dstmp)                 {.importc: "glm_mat4_mul"  .}
 proc scale*(mp; cs)                        {.importc: "glm_mat4_scale".}
 proc inv*(mp, dstmp)                       {.importc: "glm_mat4_inv"  .}
 proc det*(mp): cfloat                      {.importc: "glm_mat4_det"  .}
 proc mulv*(mp; v4p; dstv4p)                {.importc: "glm_mat4_mulv" .}
 proc mulv3*(mp; v3p; last: cfloat; dstv3p) {.importc: "glm_mat4_mulv3".}
+{.pop.}
 
-# Affine transforms
+{.push header: CGLMDir / "affine.h".}
 proc translate_to*(mp; v3p; dstmp) {.importc: "glm_translate_to"  .}
 proc translate*(mp; v3p)           {.importc: "glm_translate"     .}
 proc translate_x*(mp; cs)          {.importc: "glm_translate_x"   .}

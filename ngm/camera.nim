@@ -23,11 +23,14 @@ type
         Left
         Right
 
+#[ -------------------------------------------------------------------- ]#
+
 using
     dst : ptr Mat4
     proj: ptr Mat4
 
-{.push header: CGLMHeader.}
+{.emit: CGLMInclude.}
+{.push header: CGLMDir / "cam.h".}
 proc frustum*(left, right, bottom, top, znear, zfar: cfloat; dst)           {.importc: "glm_frustum"            .}
 proc ortho*(left, right, bottom, top, znear, zfar: cfloat; dst)             {.importc: "glm_ortho"              .}
 proc ortho_aabb*(box: ptr array[2, Vec3]; dst)                              {.importc: "glm_ortho_aabb"         .}
@@ -101,3 +104,4 @@ proc pan*(cam: var Camera; dir: PanDirection) =
     cam.pos += 0.1*(normalized vdir)
 
 {.pop.}
+

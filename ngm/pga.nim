@@ -29,12 +29,24 @@ func blade_abbrev(blade: string): string =
     else:
         assert(false, &"Failed to match '{blade}' to an abbreviation")
 
-macro gen_algebra(comps: varargs[untyped]): untyped =
+macro gen_algebra(comps: varargs[tuple[id: string, sq: int]]): untyped =
     var full_basis = nnkConstDef.newTree(
         nnkPostfix.newTree(ident "*", ident "FullBasis"),
         newEmptyNode(),
         newTree nnkBracket,
     )
+
+    var bases   = comps.map_it $it[0]
+    let squares = comps.map_it it[1]
+
+    # echo product [bases, bases]
+    # echo product [product [bases, bases], product [bases, bases]]
+    for x in 
+
+    while next_permutation bases:
+        echo bases
+    # echo perms
+    quit 0
 
     result = newNimNode nnkStmtList
     for basis in comps:
@@ -46,11 +58,12 @@ macro gen_algebra(comps: varargs[untyped]): untyped =
 
             func `+`*(a, b: @@basis): @@basis {.borrow.}
             func `-`*(a, b: @@basis): @@basis {.borrow.}
-            func `*`*(a, b: @@basis): @@basis {.borrow.}
-            func `/`*(a, b: @@basis): @@basis {.borrow.}
             proc `+=`*(a: var `@@basis`; b: @@basis) {.borrow.}
             proc `-=`*(a: var `@@basis`; b: @@basis) {.borrow.}
+
             proc `*=`*(a: var `@@basis`; b: @@basis) {.borrow.}
+            func `*`*(a, b: @@basis): @@basis {.borrow.}
+            func `/`*(a, b: @@basis): @@basis {.borrow.}
             proc `/=`*(a: var `@@basis`; b: @@basis) {.borrow.}
 
             func `==`*(a, b: @@basis): bool {.borrow.}
@@ -60,8 +73,11 @@ macro gen_algebra(comps: varargs[untyped]): untyped =
         full_basis[2].add (newLit $basis)
 
     result.add(nnkConstSection.newTree full_basis)
+    echo repr result
 
-gen_algebra(e0, e1, e2, e01, e20, e12, e012)
+gen_algebra(("e0", 0), ("e1", 1), ("e2", 1))
+# gen_algebra(e0, e1, e2, e01, e20, e12, e012)
+
 # when defined PGA2D:
 #     gen_algebra(e0, e1, e2, e3, e01, e20, e12, e012)
 # elif defined PGA3D:
@@ -71,12 +87,12 @@ func build_ctor(name: string; param_list: openArray[string]): NimNode {.compileT
     var params = @[ident name]
     var ctor   = newNimNode nnkStmtList
     for (i, param) in enumerate param_list:
+        let kind  = ident $param
         let field = ident(name_of_basis $param)
         ctor.add quote do:
-            result.`field` = `field`
+            result.`field` = `kind` `field`
 
-        let param = ident param
-        params.add newIdentDefs(field, param, param.newCall(newLit 0))
+        params.add newIdentDefs(field, ident $Real, newLit 0)
 
     let name = ident $(to_lower_ascii $name)
     result = newProc(name.postfix "*",
@@ -85,7 +101,6 @@ func build_ctor(name: string; param_list: openArray[string]): NimNode {.compileT
         params    = params,
         body      = ctor,
     )
-    debug_echo repr result
 
 macro gen_blades(blades: varargs[untyped]): untyped =
     var blade_list: seq[string] # Need this for operator resolution without `AllBlades` defined yet
@@ -276,7 +291,9 @@ macro gen_blades(blades: varargs[untyped]): untyped =
         let ctor = ident(to_lower_ascii $blade)
         result.add quote("@@") do:
             func `+`*(a: `@@T`; b: `@@U`): `@@blade` =
-                `@@ctor`(`@@t` = a, `@@u` = b)
+                `@@ctor`(`@@t` = Real a, `@@u` = Real b)
+        # echo repr result
+        # quit 0
 
     # Ops for differing blades
     for b in product [blade_list, blade_list]:

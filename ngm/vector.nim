@@ -84,7 +84,8 @@ using
     cs            : cfloat
     s             : float32
 
-{.push header: CGLMHeader.}
+{.emit: CGLMInclude.}
+{.push header: CGLMDir / "vec3.h".}
 proc negate*(v3p)          {.importc: "glm_vec3_negate"   .}
 proc negate_to*(v3p, dst3) {.importc: "glm_vec3_negate_to".}
 
