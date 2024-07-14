@@ -1,3 +1,7 @@
+# This file is a part of NGM. Copyright (C) 2024 carrexxii.
+# It is distributed under the terms of the Apache License, Version 2.0.
+# For a copy, see the LICENSE file or <https://apache.org/licenses/>.
+
 import
     std/[macros, strutils, sequtils, algorithm],
     common
@@ -41,7 +45,7 @@ macro gen_algebra(comps: varargs[tuple[id: string, sq: int]]): untyped =
 
     # echo product [bases, bases]
     # echo product [product [bases, bases], product [bases, bases]]
-    for x in 
+    for x in
 
     while next_permutation bases:
         echo bases

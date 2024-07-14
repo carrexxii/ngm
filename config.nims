@@ -52,7 +52,8 @@ task restore, "Fetch and build dependencies":
                 run cmd
 
 task test, "Run the project's tests":
-    run &"testament pattern \"{test_dir}/*.nim\""
+    run &"nim c -r -p:. {test_dir}/vec.nim"
+    # run &"testament pattern \"{test_dir}/*.nim\""
 
 task info, "Print out information about the project":
     echo green &"NGM - Nim Game Maths"

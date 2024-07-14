@@ -1,7 +1,9 @@
 *
 !*.*
 !*/
+!LICENSE
 
 nimcache/
 testresults/
 build/
+
