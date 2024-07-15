@@ -3,6 +3,11 @@
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
 {.experimental: "dotOperators".}
+{.emit: """
+#define glm_vec2_muls(a, b, d) glm_vec2_scale(a, b, d)
+#define glm_vec3_muls(a, b, d) glm_vec3_scale(a, b, d)
+#define glm_vec4_muls(a, b, d) glm_vec4_scale(a, b, d)
+""".}
 
 import std/[macros, strutils], common
 from std/sequtils  import map_it, zip
