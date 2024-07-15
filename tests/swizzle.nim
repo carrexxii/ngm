@@ -1,4 +1,4 @@
-import std/[unittest, strformat], ngm
+import std/unittest, ngm
 
 var
     v1 = vec(1, 2, 3)

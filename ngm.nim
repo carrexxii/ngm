@@ -1,3 +1,3 @@
-import ngm/[vector, matrix, camera]
-export vector, matrix, camera
+import ngm/[util, vector, matrix, camera]
+export util, vector, matrix, camera
 

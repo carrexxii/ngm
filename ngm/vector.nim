@@ -6,7 +6,6 @@
 
 import std/[macros, strutils], common
 from std/sequtils  import map_it, zip
-from std/algorithm import sorted
 
 const VectorFields = "xyzw"
 
@@ -102,26 +101,29 @@ macro gen_fns(fn_name, op: untyped; is_infix = true; is_calc = false): untyped =
     let is_calc  = is_calc  == (new_lit true) # Calculations return a scalar value like the dot product
     for n in 2..4:
         let
-            name     = "glm_vec$1_$2" % [$n, $fn_name]
-            names    = "glm_vec$1_$2s" % [$n, $fn_name]
+            name     = "glm_vec$1_$2"  % [$n, $fn_name]
+            name_s   = "glm_vec$1_$2s" % [$n, $fn_name]
             ident    = ident name
-            idents   = ident names
+            idents   = ident name_s
             header   = CGLMDir / ("vec$1.h" % $n)
             vec_t    = ident ("Vec$1" % $n)
             scalar_t = ident "float32"
         if is_calc:
             result.add quote do:
                 proc `ident`* (v, u: ptr `vec_t`): `scalar_t` {.header: `header`, importc: `name`.}
-                func `op`*(v, u: `vec_t`): `scalar_t` {.inline.} = `ident`(v, u)
+                func `fn_name`*(v, u: `vec_t`): `scalar_t` {.inline.} = `ident`(v, u)
+                func `op`*(v, u: `vec_t`): `scalar_t`      {.inline.} = `ident`(v, u)
         elif is_infix:
             let eq_op = ident ($op & "=")
             result.add quote do:
-                proc `ident`* (v, u, dst: ptr `vec_t`)                          {.header: `header`, importc: `name` .}
-                proc `idents`*(v: ptr `vec_t`; s: `scalar_t`; dst: ptr `vec_t`) {.header: `header`, importc: `names`.}
-                func `op`*(v, u: `vec_t`): `vec_t`             {.inline.} = `ident`(v, u, result)
-                func `op`*(v: `vec_t`; s: `scalar_t`): `vec_t` {.inline.} = `idents`(v, s, result)
-                func `eq_op`*(v: var `vec_t`; u: `vec_t`)      {.inline.} = v = `op`(v, u)
-                func `eq_op`*(v: var `vec_t`; s: `scalar_t`)   {.inline.} = v = `op`(v, s)
+                proc `ident`* (v, u, dst: ptr `vec_t`)                          {.header: `header`, importc: `name`  .}
+                proc `idents`*(v: ptr `vec_t`; s: `scalar_t`; dst: ptr `vec_t`) {.header: `header`, importc: `name_s`.}
+                func `fn_name`*(v, u: `vec_t`): `vec_t`             {.inline.} = `ident`(v, u, result)
+                func `fn_name`*(v: `vec_t`; s: `scalar_t`): `vec_t` {.inline.} = `idents`(v, s, result)
+                func `op`*(v, u: `vec_t`): `vec_t`                  {.inline.} = `ident`(v, u, result)
+                func `op`*(v: `vec_t`; s: `scalar_t`): `vec_t`      {.inline.} = `idents`(v, s, result)
+                func `eq_op`*(v: var `vec_t`; u: `vec_t`)           {.inline.} = v = `op`(v, u)
+                func `eq_op`*(v: var `vec_t`; s: `scalar_t`)        {.inline.} = v = `op`(v, s)
         else:
             if ($name).ends_with "_to":
                 result.add quote do:
@@ -142,7 +144,9 @@ gen_fns sub  , `-`
 gen_fns mul  , `*`
 gen_fns `div`, `/`
 
-gen_fns dot, `∙`, is_calc = true
+gen_fns dot      , `∙`  , is_calc = true
+gen_fns distance , `<->`, is_calc = true
+gen_fns distance2, `<=>`, is_calc = true
 
 proc cross*(v, u, dst: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_cross".}
 func cross*(v, u: Vec3): Vec3 {.inline.} = cross v, u, result
