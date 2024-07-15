@@ -4,24 +4,26 @@
 
 import common, vector
 
-type Mat4* = array[4, Vec4]
+type Mat4x4* = array[4, Vec4]
 
-const Mat4Ident*: Mat4 = [[1, 0, 0, 0],
+const Mat4x4Ident*: Mat4x4 = [[1, 0, 0, 0],
                           [0, 1, 0, 0],
                           [0, 0, 1, 0],
                           [0, 0, 0, 1]]
 
-proc `$`*(m: Mat4): string =
+proc `$`*(m: Mat4x4): string =
     &"[[{m[0][0]:.2f}, {m[0][1]:.2f}, {m[0][2]:.2f}, {m[0][3]:.2f}],\n" &
     &" [{m[1][0]:.2f}, {m[1][1]:.2f}, {m[1][2]:.2f}, {m[1][3]:.2f}],\n" &
     &" [{m[2][0]:.2f}, {m[2][1]:.2f}, {m[2][2]:.2f}, {m[2][3]:.2f}],\n" &
     &" [{m[3][0]:.2f}, {m[3][1]:.2f}, {m[3][2]:.2f}, {m[3][3]:.2f}]]"
 
+converter `Mat4x4 -> ptr Mat4x4`*(m: Mat4x4): ptr Mat4x4 = m.addr
+
 #[ -------------------------------------------------------------------- ]#
 
 using
-    mp, m1p, m2p, dstmp: ptr Mat4
-    m , m1 , m2 , dstm :     Mat4
+    mp, m1p, m2p, dstmp: ptr Mat4x4
+    m , m1 , m2 , dstm :     Mat4x4
     v3p, dstv3p, axisp: ptr Vec3
     v3 , dstv3 , axis :     Vec3
     v4p, dstv4p: ptr Vec4
@@ -62,28 +64,28 @@ proc spin*(mp; cangle; axisp)        {.importc: "glm_spin"       .}
 
 {.push inline.}
 
-proc translation*(v3): Mat4       = translate_make(result.addr, v3.addr)
-proc rotation*(angle; axis): Mat4 = rotate_make(result.addr, angle, axis.addr)
+proc translation*(v3): Mat4x4       = translate_make(result.addr, v3.addr)
+proc rotation*(angle; axis): Mat4x4 = rotate_make(result.addr, angle, axis.addr)
 
-proc `*`*(m1, m2): Mat4 = mul(m1.addr, m2.addr, result.addr)
+proc `*`*(m1, m2): Mat4x4 = mul(m1.addr, m2.addr, result.addr)
 proc `*`*(m; v4) : Vec4 = mulv(m.addr, v4.addr, result.addr)
 proc `*`*(m; v3) : Vec3 = mulv3(m.addr, v3.addr, 0, result.addr)
-proc `*`*(m; s)  : Mat4 = scale_uni(m.addr, s)
+proc `*`*(m; s)  : Mat4x4 = scale_uni(m.addr, s)
 
-proc `*=`*(m1: var Mat4; m2) = m1 = m1 * m2
-proc `*=`*(m : var Mat4; s ) = m  = m * s
-proc `*=`*(m : var Mat4; v3) = scale(m.addr, v3.addr)
+proc `*=`*(m1: var Mat4x4; m2) = m1 = m1 * m2
+proc `*=`*(m : var Mat4x4; s ) = m  = m * s
+proc `*=`*(m : var Mat4x4; v3) = scale(m.addr, v3.addr)
 
-proc `+`*(m; v3): Mat4 = translate_to(m.addr, v3.addr, result.addr)
-proc `+=`*(m: var Mat4; v3) = translate(m.addr, v3.addr)
+proc `+`*(m; v3): Mat4x4 = translate_to(m.addr, v3.addr, result.addr)
+proc `+=`*(m: var Mat4x4; v3) = translate(m.addr, v3.addr)
 
-proc scale*(m: var Mat4; v3) = scale(m.addr, v3.addr)
+proc scale*(m: var Mat4x4; v3) = scale(m.addr, v3.addr)
 
-proc translate*(m: var Mat4; v3)    = translate(m.addr, v3.addr)
-proc translate_to*(m: var Mat4; v3) = translate_to(m.addr, v3.addr, m.addr)
+proc translate*(m: var Mat4x4; v3)    = translate(m.addr, v3.addr)
+proc translate_to*(m: var Mat4x4; v3) = translate_to(m.addr, v3.addr, m.addr)
 
-proc rotate*(m: var Mat4; angle; axis) = rotate(m.addr, angle, axis.addr)
-proc spin*(m: var Mat4; angle; axis)   = spin(m.addr, angle, axis.addr)
+proc rotate*(m: var Mat4x4; angle; axis) = rotate(m.addr, angle, axis.addr)
+proc spin*(m: var Mat4x4; angle; axis)   = spin(m.addr, angle, axis.addr)
 
 {.pop.}
 
