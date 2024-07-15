@@ -2,10 +2,13 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import common
-from std/strutils import to_lower
+{.experimental: "dotOperators".}
 
-# TODO: https://github.com/stavenko/nim-glm/blob/47d5f8681f3c462b37e37ebc5e7067fa5cba4d16/glm/vec.nim#L193
+import std/macros, common
+from std/strutils import find, to_lower
+from std/sequtils import map_it, zip
+
+const VectorFields = "xyzw"
 
 type
     Vector[N: static int, T] = array[N, T]
@@ -21,6 +24,57 @@ func vec*(x, y, z, w: float32): Vec4 = [x, y, z, w]
 func `$`*(v: Vec2): string = &"({v[0]}, {v[1]})"
 func `$`*(v: Vec3): string = &"({v[0]}, {v[1]}, {v[2]})"
 func `$`*(v: Vec4): string = &"({v[0]}, {v[1]}, {v[2]}, {v[3]})"
+
+converter `Vec2 -> ptr Vec2`*(v: Vec2): ptr Vec2 = v.addr
+converter `Vec3 -> ptr Vec3`*(v: Vec3): ptr Vec3 = v.addr
+converter `Vec4 -> ptr Vec4`*(v: Vec4): ptr Vec4 = v.addr
+
+func to_inds(fields: string): seq[int] =
+    result = fields.map_it VectorFields.find it
+    assert -1 notin result:
+        &"Invalid swizzle fields for vector: '{fields}'. Valid fields include '{VectorFields}' ({fields} -> {result})"
+
+macro `.`*(v: Vector; fields: untyped): untyped =
+    let inds = to_inds fields.repr
+    if inds.len == 1:
+        let i = inds[0]
+        result = quote do:
+            `v`[`i`]
+    else:
+        result = new_nim_node nnkCall
+        result.add ident "vec"
+        for i in inds:
+            result.add quote do:
+                `v`[`i`]
+
+macro `.=`*(v: Vector; fields, rhs: untyped): untyped =
+    let (lhs_count, lhs_inds) = (fields.repr.len, to_inds fields.repr)
+    let (rhs_count, rhs_inds) = case rhs.kind
+        of nnkIntLit, nnkFloatLit    : (1, @[])
+        of nnkTupleConstr, nnkBracket: (rhs.len, to_inds fields.repr)
+        of nnkDotExpr                : (rhs[1].repr.len, to_inds rhs[1].repr)
+        else:
+            echo &"Invalid node kind for RHS of vector `.=`: '{rhs.kind}'"
+            quit 1
+    assert lhs_count == rhs_count:
+        &"Mismatched field count for vector `.=`: {lhs_count} LHS != {rhs_count} RHS"
+
+    if lhs_count == 1:
+        let i = lhs_inds[0]
+        result = quote do:
+            `v`[`i`] = `rhs`
+    else:
+        result = new_nim_node nnkStmtList
+        let internal_type = v.get_type.get_type[2]
+        for (i, j) in zip(lhs_inds, rhs_inds):
+            if rhs.kind == nnkDotExpr:
+                let rhs = rhs[0]
+                result.add quote do:
+                    `v`[`i`] = `internal_type`(`rhs`[`j`])
+            else:
+                let rhs = rhs[j]
+                result.add quote do:
+                    `v`[`i`] = `internal_type`(`rhs`)
 
 const
     Vec2Zero* = vec(0, 0)
@@ -104,23 +158,24 @@ proc normalize_to*(v3p, dst3) {.importc: "glm_vec3_normalize_to".}
 
 {.push inline.}
 
-proc `-`*(v3): Vec3 = negate_to(v3.addr, result.addr)
+func `-`*(v3): Vec3 = negate_to v3.addr, result.addr
 
-proc `+`*(v3, u3): Vec3 = add(v3.addr, u3.addr, result.addr)
-proc `-`*(v3, u3): Vec3 = sub(v3.addr, u3.addr, result.addr)
+func `+`*(v3, u3): Vec3 = add v3.addr, u3.addr, result.addr
+func `-`*(v3, u3): Vec3 = sub v3.addr, u3.addr, result.addr
 
-proc `+=`*(v3: var Vec3, u3) = v3 = v3 + u3
-proc `-=`*(v3: var Vec3, u3) = v3 = v3 - u3
+func `+=`*(v3: var Vec3, u3) = v3 = v3 + u3
+func `-=`*(v3: var Vec3, u3) = v3 = v3 - u3
 
-proc `*`*(v3; s): Vec3 = scale(v3.addr, s, result.addr)
-proc `*`*(s; v3): Vec3 = scale(v3.addr, s, result.addr)
+func `*`*(v3; s): Vec3 = scale v3.addr, s, result.addr
+func `*`*(s; v3): Vec3 = scale v3.addr, s, result.addr
 
-proc `*=`*(v3: var Vec3; s) = v3 = v3 * s
+func `*=`*(v3: var Vec3; s) = v3 = v3 * s
 
-proc cross*(v3, u3): Vec3 = cross(v3.addr, u3.addr, result.addr)
+func cross*(v3, u3): Vec3 = cross v3.addr, u3.addr, result.addr
+func `×`*  (v3, u3): Vec3 = cross v3.addr, u3.addr, result.addr
 
-proc normalize*(v3: var Vec3)    = normalize v3.addr
-proc normalized*(v3: Vec3): Vec3 = normalize_to(v3.addr, result.addr)
+func normalize*(v3: var Vec3)    = normalize v3.addr
+func normalized*(v3: Vec3): Vec3 = normalize_to v3.addr, result.addr
 
 {.pop.}
 
