@@ -5,9 +5,6 @@ var
     u = vec(1, 2, 3)
     w = vec(3, 5, 7)
 
-echo "===== Vector Tests ====="
-echo &"    v = {v}; u = {u}; w = {w}"
-
 check:
     v == vec(0, 0, 0)
     u == vec(1, 2, 3)

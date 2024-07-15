@@ -5,7 +5,8 @@
 {.experimental: "dotOperators".}
 
 import std/[macros, strutils], common
-from std/sequtils import map_it, zip
+from std/sequtils  import map_it, zip
+from std/algorithm import sorted
 
 const VectorFields = "xyzw"
 
@@ -64,10 +65,19 @@ macro `.=`*(v: Vector; fields, rhs: untyped): untyped =
             `v`[`i`] = `rhs`
     else:
         result = new_nim_node nnkStmtList
-        let internal_type = v.get_type.get_type[2]
+        let internal_type = v.get_type[2]
+        let is_dot_expr = rhs.kind == nnkDotExpr
+        # Need to make a copy for swapping fields if LHS symbol = RHS symbol
+        let rhs =
+            if is_dot_expr and (v.repr == rhs[0].repr):
+                let cp = gen_sym(ident = v.repr)
+                result.add quote do:
+                    let `cp` = `v`
+                cp
+            else:
+                rhs[0]
         for (i, j) in zip(lhs_inds, rhs_inds):
-            if rhs.kind == nnkDotExpr:
-                let rhs = rhs[0]
+            if is_dot_expr:
                 result.add quote do:
                     `v`[`i`] = `internal_type`(`rhs`[`j`])
             else:
@@ -121,8 +131,6 @@ macro gen_fns(fn_name, op: untyped; is_infix = true; is_calc = false): untyped =
                 result.add quote do:
                     proc `ident`*(v: ptr `vec_t`) {.header: `header`, importc: `name`.}
                     func `op`*(v: var `vec_t`) {.inline.} = `ident`(v)
-
-    echo repr result
 
 {.emit: CGLMInclude.}
 gen_fns negate      , `-`       , is_infix = false
