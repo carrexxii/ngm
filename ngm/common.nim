@@ -13,3 +13,8 @@ const CGLMInclude* = &"""
 #define CGLM_FORCE_LEFT_HANDED
 """
 
+const DefaultMouseSensitivity* = 0.0005
+
+type Degrees* = float32
+type Radians* = float32
+

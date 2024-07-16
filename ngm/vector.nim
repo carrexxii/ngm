@@ -21,9 +21,9 @@ type
     Vec3* = Vector[3, float32]
     Vec4* = Vector[4, float32]
 
-func vec*(x, y      : float32): Vec2 = [x, y]
-func vec*(x, y, z   : float32): Vec3 = [x, y, z]
-func vec*(x, y, z, w: float32): Vec4 = [x, y, z, w]
+func vec*(x, y      : SomeNumber): Vec2 {.inline.} = [float32 x, float32 y]
+func vec*(x, y, z   : SomeNumber): Vec3 {.inline.} = [float32 x, float32 y, float32 z]
+func vec*(x, y, z, w: SomeNumber): Vec4 {.inline.} = [float32 x, float32 y, float32 z, float32 w]
 
 func `$`*(v: Vec2): string = &"({v[0]}, {v[1]})"
 func `$`*(v: Vec3): string = &"({v[0]}, {v[1]}, {v[2]})"
@@ -140,7 +140,7 @@ macro gen_fns(fn_name, op: untyped; is_infix = true; is_calc = false): untyped =
                     func `op`*(v: var `vec_t`) {.inline.} = `ident`(v)
 
 {.emit: CGLMInclude.}
-gen_fns negate      , `-`       , is_infix = false
+gen_fns negate_to   , `-`       , is_infix = false
 gen_fns normalize   , normalize , is_infix = false
 gen_fns normalize_to, normalized, is_infix = false
 
@@ -153,7 +153,23 @@ gen_fns dot      , `∙`  , is_calc = true
 gen_fns distance , `<->`, is_calc = true
 gen_fns distance2, `<=>`, is_calc = true
 
-proc cross*(v, u, dst: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_cross".}
-func cross*(v, u: Vec3): Vec3 {.inline.} = cross v, u, result
-func `×`*  (v, u: Vec3): Vec3 {.inline.} = cross v, u, result
+# CGLM_INLINE float glm_vec3_angle(vec3 a, vec3 b);
+proc glm_vec2_angle*(v, u: ptr Vec2): float32 {.header: CGLMDir / "vec2.h", importc: "glm_vec2_angle".}
+proc glm_vec3_angle*(v, u: ptr Vec3): float32 {.header: CGLMDir / "vec3.h", importc: "glm_vec3_angle".}
+func angle*(v, u: Vec2): Radians = glm_vec2_angle v, u
+func angle*(v, u: Vec3): Radians = glm_vec3_angle v, u
+
+proc glm_vec3_cross*(v, u, dst: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_cross".}
+func cross*(v, u: Vec3): Vec3 {.inline.} = glm_vec3_cross v, u, result
+func `×`*  (v, u: Vec3): Vec3 {.inline.} = glm_vec3_cross v, u, result
+
+proc glm_vec2_rotate*(v: ptr Vec2; angle: float32; dest: ptr Vec2) {.header: CGLMDir / "vec2.h", importc: "glm_vec2_rotate".}
+proc glm_vec3_rotate*(v: ptr Vec3; angle: float32; axis: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_rotate".}
+func rotate*(v: var Vec2; angle: Radians) = v.glm_vec2_rotate angle, v
+func rotate*(v: var Vec3; axis: Vec3; angle: Radians) = v.glm_vec3_rotate angle, axis
+func rotated*(v: Vec2; angle: Radians): Vec2 =
+    v.glm_vec2_rotate angle, result
+func rotated*(v, axis: Vec3; angle: Radians): Vec3 =
+    result = v
+    result.glm_vec3_rotate angle, axis
 

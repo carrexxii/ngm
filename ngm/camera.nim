@@ -92,15 +92,34 @@ func look*(cam: var Camera) =
     glm_look cam.pos, cam.dir, cam.up, cam.view
 
 func set_orthogonal*(cam: var Camera; l, r, b, t, zn, zf: float32) =
+    cam.proj_kind = cpOrthogonal
     cam.proj = orthogonal(l, r, b, t, zn, zf)
 
 func set_perspective*(cam: var Camera; fov, aspect, znear, zfar: float32) =
+    cam.proj_kind = cpPerspective
     cam.proj = perspective(fov, aspect, znear, zfar)
 
 func update*(cam: var Camera) =
     look cam
 
 {.pop.}
+
+func yaw*(cam: var Camera; angle: Radians) {.inline.} =
+    cam.target = cam.pos + cam.dir.rotated(cam.up, angle)
+
+func pitch*(cam: var Camera; angle: Radians; lock_view = true) {.inline.} =
+    var target = cam.dir
+    var angle_to_rotate = angle
+    if lock_view:
+        let max_angle_up   = cam.up.angle target
+        let max_angle_down = (-cam.up).angle target
+        angle_to_rotate = angle_to_rotate.clamp(-max_angle_down, max_angle_up)
+
+    target.rotate cam.right, angle_to_rotate
+    cam.target = cam.pos + target
+
+func roll*(cam: var Camera; angle: Radians) {.inline.} =
+    cam.up.rotate cam.dir, angle
 
 func move*(cam: var Camera; dir: CameraDirection) =
     case dir
@@ -127,9 +146,7 @@ func move*(cam: var Camera; dir: CameraDirection) =
         cam.pos    += right
         cam.target += right
 
-proc move*(cam: var Camera) =
-    var dist = cam.pos <-> cam.target
-    dist += cam.pan_speed
-    dist = -max(dist, 0.00001)
-    cam.pos = cam.target + (cam.dir * dist)
+func move*(cam: var Camera; mouse_delta: Vec2; mouse_sensitivity = DefaultMouseSensitivity) =
+    cam.yaw   mouse_delta.x * mouse_sensitivity
+    cam.pitch mouse_delta.y * mouse_sensitivity
 
