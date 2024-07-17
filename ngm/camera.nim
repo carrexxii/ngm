@@ -2,7 +2,7 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import common, vector, matrix
+import common, util, vector, matrix
 
 type
     CameraProjection* = enum
@@ -10,6 +10,7 @@ type
         cpPerspective
 
     CameraDirection* = enum
+        cdNone
         cdForwards
         cdBackwards
         cdUp
@@ -123,6 +124,7 @@ func roll*(cam: var Camera; angle: Radians) {.inline.} =
 
 func move*(cam: var Camera; dir: CameraDirection) =
     case dir
+    of cdNone: discard
     of cdForwards, cdBackwards:
         var fwd = cam.dir
         if cam.proj_kind == cpOrthogonal:
@@ -147,6 +149,6 @@ func move*(cam: var Camera; dir: CameraDirection) =
         cam.target += right
 
 func move*(cam: var Camera; mouse_delta: Vec2; mouse_sensitivity = DefaultMouseSensitivity) =
-    cam.yaw   mouse_delta.x * mouse_sensitivity
-    cam.pitch mouse_delta.y * mouse_sensitivity
+    cam.yaw   Radians (mouse_delta.x * mouse_sensitivity)
+    cam.pitch Radians (mouse_delta.y * mouse_sensitivity)
 

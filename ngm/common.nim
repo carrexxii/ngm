@@ -15,6 +15,3 @@ const CGLMInclude* = &"""
 
 const DefaultMouseSensitivity* = 0.0005
 
-type Degrees* = float32
-type Radians* = float32
-

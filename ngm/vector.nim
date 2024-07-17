@@ -9,13 +9,13 @@
 #define glm_vec4_muls(a, b, d) glm_vec4_scale(a, b, d)
 """.}
 
-import std/[macros, strutils], common
+import std/[macros, strutils], common, util
 from std/sequtils  import map_it, zip
 
 const VectorFields = "xyzw"
 
 type
-    Vector[N: static int, T] = array[N, T]
+    Vector*[N: static int, T] = array[N, T]
 
     Vec2* = Vector[2, float32]
     Vec3* = Vector[3, float32]
@@ -25,13 +25,11 @@ func vec*(x, y      : SomeNumber): Vec2 {.inline.} = [float32 x, float32 y]
 func vec*(x, y, z   : SomeNumber): Vec3 {.inline.} = [float32 x, float32 y, float32 z]
 func vec*(x, y, z, w: SomeNumber): Vec4 {.inline.} = [float32 x, float32 y, float32 z, float32 w]
 
-func `$`*(v: Vec2): string = &"({v[0]}, {v[1]})"
-func `$`*(v: Vec3): string = &"({v[0]}, {v[1]}, {v[2]})"
-func `$`*(v: Vec4): string = &"({v[0]}, {v[1]}, {v[2]}, {v[3]})"
+func `$`*(v: Vec2): string = &"[{v[0]:.2f}, {v[1]:.2f}]"
+func `$`*(v: Vec3): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}]"
+func `$`*(v: Vec4): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}, {v[3]:.2f}]"
 
-converter `Vec2 -> ptr Vec2`*(v: Vec2): ptr Vec2 = v.addr
-converter `Vec3 -> ptr Vec3`*(v: Vec3): ptr Vec3 = v.addr
-converter `Vec4 -> ptr Vec4`*(v: Vec4): ptr Vec4 = v.addr
+converter `Vector -> ptr Vector`*(v: Vector): ptr Vector = v.addr
 
 func to_inds(fields: string): seq[int] =
     result = fields.map_it VectorFields.find it
@@ -156,8 +154,8 @@ gen_fns distance2, `<=>`, is_calc = true
 # CGLM_INLINE float glm_vec3_angle(vec3 a, vec3 b);
 proc glm_vec2_angle*(v, u: ptr Vec2): float32 {.header: CGLMDir / "vec2.h", importc: "glm_vec2_angle".}
 proc glm_vec3_angle*(v, u: ptr Vec3): float32 {.header: CGLMDir / "vec3.h", importc: "glm_vec3_angle".}
-func angle*(v, u: Vec2): Radians = glm_vec2_angle v, u
-func angle*(v, u: Vec3): Radians = glm_vec3_angle v, u
+func angle*(v, u: Vec2): Radians = Radians glm_vec2_angle(v, u)
+func angle*(v, u: Vec3): Radians = Radians glm_vec3_angle(v, u)
 
 proc glm_vec3_cross*(v, u, dst: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_cross".}
 func cross*(v, u: Vec3): Vec3 {.inline.} = glm_vec3_cross v, u, result
@@ -165,11 +163,11 @@ func `×`*  (v, u: Vec3): Vec3 {.inline.} = glm_vec3_cross v, u, result
 
 proc glm_vec2_rotate*(v: ptr Vec2; angle: float32; dest: ptr Vec2) {.header: CGLMDir / "vec2.h", importc: "glm_vec2_rotate".}
 proc glm_vec3_rotate*(v: ptr Vec3; angle: float32; axis: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_rotate".}
-func rotate*(v: var Vec2; angle: Radians) = v.glm_vec2_rotate angle, v
-func rotate*(v: var Vec3; axis: Vec3; angle: Radians) = v.glm_vec3_rotate angle, axis
+func rotate*(v: var Vec2; angle: Radians) = v.glm_vec2_rotate (float32 angle), v
+func rotate*(v: var Vec3; axis: Vec3; angle: Radians) = v.glm_vec3_rotate (float32 angle), axis
 func rotated*(v: Vec2; angle: Radians): Vec2 =
-    v.glm_vec2_rotate angle, result
+    v.glm_vec2_rotate (float32 angle), result
 func rotated*(v, axis: Vec3; angle: Radians): Vec3 =
     result = v
-    result.glm_vec3_rotate angle, axis
+    result.glm_vec3_rotate (float32 angle), axis
 
