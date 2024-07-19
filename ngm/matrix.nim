@@ -71,6 +71,14 @@ proc rotate*(mp; cangle; axisp)      {.importc: "glm_rotate"     .}
 proc spin*(mp; cangle; axisp)        {.importc: "glm_spin"       .}
 {.pop.}
 
+{.push header: CGLMDir / "project.h".}
+proc unprojecti*(v: ptr Vec3; inv_mat: ptr Mat4x4; viewport: ptr Vec4; dst: ptr Vec3) {.importc: "glm_unprojecti".}
+proc unproject*(v: ptr Vec3; mat: ptr Mat4x4; viewport: ptr Vec4; dst: ptr Vec3)      {.importc: "glm_unproject" .}
+proc project*(v: ptr Vec3; mat: ptr Mat4x4; viewport: ptr Vec4; dst: ptr Vec3)        {.importc: "glm_project"   .}
+proc project_z*(v: ptr Vec3; mat: ptr Mat4x4)                                         {.importc: "glm_project_z" .}
+proc pick_matrix*(centre, size: ptr Vec2; viewport: ptr Vec4; dest: ptr Mat4x4)       {.importc: "glm_pickmatrix".}
+{.pop.}
+
 {.push inline.}
 
 proc translation*(v3): Mat4x4       = translate_make(result.addr, v3.addr)
@@ -95,6 +103,13 @@ proc translate_to*(m: var Mat4x4; v3) = translate_to(m.addr, v3.addr, m.addr)
 
 proc rotate*(m: var Mat4x4; angle; axis) = rotate(m.addr, angle, axis.addr)
 proc spin*(m: var Mat4x4; angle; axis)   = spin(m.addr, angle, axis.addr)
+
+proc unprojected*(v: Vec3; mat: Mat4x4; viewport: Vec4): Vec3 =
+    unproject v, mat, viewport.addr, result
+
+proc unproject*(v: var Vec3; mat: Mat4x4; viewport: Vec4) =
+    let cp = v
+    unproject cp, mat, viewport.addr, v
 
 {.pop.}
 

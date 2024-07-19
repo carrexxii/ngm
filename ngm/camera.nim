@@ -22,6 +22,7 @@ type
     Camera2D* = object
         speed*: float32 = 10.0'f32
         angle*: float32 = 0.0'f32
+        zoom* : float32 = 1.0'f32
         pos*  : Vec3 = vec(0, 0, 0)
         view* : Mat4x4 = Mat4x4Ident
         proj* : Mat4x4 = Mat4x4Ident
@@ -109,6 +110,11 @@ func set_orthogonal*(cam: var (Camera2D | Camera3D); l, r, b, t, zn, zf: float32
     when cam is Camera3D:
         cam.proj_kind = cpOrthogonal
     cam.proj = orthogonal(l, r, b, t, zn, zf)
+
+func set_orthogonal*(cam: var Camera2D; w, h: SomeNumber) =
+    let w = (float32 w) / 2 / cam.zoom
+    let h = (float32 h) / 2 / cam.zoom
+    cam.set_orthogonal -w, w, -h, h, -1, 1
 
 func set_perspective*(cam: var (Camera2D | Camera3D); fov, aspect, znear, zfar: float32) =
     when cam is Camera3D:
