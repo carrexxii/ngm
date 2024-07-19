@@ -18,20 +18,28 @@ type
         cdLeft
         cdRight
 
-type Camera* = object
-    proj_kind*: CameraProjection
-    pan_speed*: float32 = 0.1'f32
-    rot_speed*: float32 = 0.1'f32
-    pos*      : Vec3 = vec(1, 1, 1)
-    target*   : Vec3 = vec(0, 0, 0)
-    up*       : Vec3 = vec(0, 1, 0)
-    view*     : Mat4x4 = Mat4x4Ident
-    proj*     : Mat4x4 = Mat4x4Ident
+type
+    Camera2D* = object
+        speed*: float32 = 10.0'f32
+        angle*: float32 = 0.0'f32
+        pos*  : Vec3 = vec(0, 0, 0)
+        view* : Mat4x4 = Mat4x4Ident
+        proj* : Mat4x4 = Mat4x4Ident
 
-func dir*(cam: Camera): Vec3 {.inline.} =
+    Camera3D* = object
+        proj_kind*: CameraProjection
+        pan_speed*: float32 = 0.1'f32
+        rot_speed*: float32 = 0.1'f32
+        pos*      : Vec3 = vec(1, 1, 1)
+        target*   : Vec3 = vec(0, 0, 0)
+        up*       : Vec3 = vec(0, 1, 0)
+        view*     : Mat4x4 = Mat4x4Ident
+        proj*     : Mat4x4 = Mat4x4Ident
+
+func dir*(cam: Camera3D): Vec3 {.inline.} =
     cam.target - cam.pos
 
-func right*(cam: Camera): Vec3 {.inline.} =
+func right*(cam: Camera3D): Vec3 {.inline.} =
     normalized (cam.dir × cam.up)
 
 #[ -------------------------------------------------------------------- ]#
@@ -89,26 +97,39 @@ proc perspective_default*(aspect: float32 = 16/9): Mat4x4 =
 
 {.push inline.}
 
-func look*(cam: var Camera) =
+func look*(cam: var Camera3D) =
     glm_look cam.pos, cam.dir, cam.up, cam.view
 
-func set_orthogonal*(cam: var Camera; l, r, b, t, zn, zf: float32) =
-    cam.proj_kind = cpOrthogonal
+func set_orthogonal*(cam: var (Camera2D | Camera3D); aspect: float32) =
+    when cam is Camera3D:
+        cam.proj_kind = cpOrthogonal
+    cam.proj = orthogonal_default aspect
+
+func set_orthogonal*(cam: var (Camera2D | Camera3D); l, r, b, t, zn, zf: float32) =
+    when cam is Camera3D:
+        cam.proj_kind = cpOrthogonal
     cam.proj = orthogonal(l, r, b, t, zn, zf)
 
-func set_perspective*(cam: var Camera; fov, aspect, znear, zfar: float32) =
-    cam.proj_kind = cpPerspective
+func set_perspective*(cam: var (Camera2D | Camera3D); fov, aspect, znear, zfar: float32) =
+    when cam is Camera3D:
+        cam.proj_kind = cpPerspective
     cam.proj = perspective(fov, aspect, znear, zfar)
 
-func update*(cam: var Camera) =
-    look cam
+func update*(cam: var Camera2D) =
+    cam.view[3].x = cam.pos.x
+    cam.view[3].y = cam.pos.y
+    cam.view[3].z = cam.pos.z
+
+func update*(cam: var Camera3D) =
+    if cam.proj_kind == cpPerspective:
+        look cam
 
 {.pop.}
 
-func yaw*(cam: var Camera; angle: Radians) {.inline.} =
+func yaw*(cam: var Camera3D; angle: Radians) {.inline.} =
     cam.target = cam.pos + cam.dir.rotated(cam.up, angle)
 
-func pitch*(cam: var Camera; angle: Radians; lock_view = true) {.inline.} =
+func pitch*(cam: var Camera3D; angle: Radians; lock_view = true) {.inline.} =
     var target = cam.dir
     var angle_to_rotate = angle
     if lock_view:
@@ -119,10 +140,19 @@ func pitch*(cam: var Camera; angle: Radians; lock_view = true) {.inline.} =
     target.rotate cam.right, angle_to_rotate
     cam.target = cam.pos + target
 
-func roll*(cam: var Camera; angle: Radians) {.inline.} =
+func roll*(cam: var Camera3D; angle: Radians) {.inline.} =
     cam.up.rotate cam.dir, angle
 
-func move*(cam: var Camera; dir: CameraDirection) =
+func move*(cam: var Camera2D; dir: CameraDirection; dt: float) =
+    case dir
+    of cdNone: return
+    of cdUp   : cam.pos.y -= cam.speed * dt
+    of cdDown : cam.pos.y += cam.speed * dt
+    of cdLeft : cam.pos.x += cam.speed * dt
+    of cdRight: cam.pos.x -= cam.speed * dt
+    else: assert false, "Zooming"
+
+func move*(cam: var Camera3D; dir: CameraDirection) =
     case dir
     of cdNone: discard
     of cdForwards, cdBackwards:
@@ -148,7 +178,7 @@ func move*(cam: var Camera; dir: CameraDirection) =
         cam.pos    += right
         cam.target += right
 
-func move*(cam: var Camera; mouse_delta: Vec2; mouse_sensitivity = DefaultMouseSensitivity) =
+func move*(cam: var Camera3D; mouse_delta: Vec2; mouse_sensitivity = DefaultMouseSensitivity) =
     cam.yaw   Radians (mouse_delta.x * mouse_sensitivity)
     cam.pitch Radians (mouse_delta.y * mouse_sensitivity)
 

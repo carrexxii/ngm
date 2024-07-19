@@ -52,3 +52,7 @@ check:
     v2 == vec(6, 6, 5)
     v3 == vec(2, 1, 3)
 
+# TODO
+    # mouse_pos[0] = int32 mouse.x
+    # mouse_pos[1] = int32 mouse.y
+

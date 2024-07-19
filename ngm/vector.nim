@@ -21,13 +21,23 @@ type
     Vec3* = Vector[3, float32]
     Vec4* = Vector[4, float32]
 
+    IVec2* = Vector[2, int32]
+    IVec3* = Vector[3, int32]
+    IVec4* = Vector[4, int32]
+
 func vec*(x, y      : SomeNumber): Vec2 {.inline.} = [float32 x, float32 y]
 func vec*(x, y, z   : SomeNumber): Vec3 {.inline.} = [float32 x, float32 y, float32 z]
 func vec*(x, y, z, w: SomeNumber): Vec4 {.inline.} = [float32 x, float32 y, float32 z, float32 w]
+func ivec*(x, y      : SomeNumber): IVec2 {.inline.} = [int32 x, int32 y]
+func ivec*(x, y, z   : SomeNumber): IVec3 {.inline.} = [int32 x, int32 y, int32 z]
+func ivec*(x, y, z, w: SomeNumber): IVec4 {.inline.} = [int32 x, int32 y, int32 z, int32 w]
 
 func `$`*(v: Vec2): string = &"[{v[0]:.2f}, {v[1]:.2f}]"
 func `$`*(v: Vec3): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}]"
 func `$`*(v: Vec4): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}, {v[3]:.2f}]"
+func `$`*(v: IVec2): string = &"[{v[0]}, {v[1]}]"
+func `$`*(v: IVec3): string = &"[{v[0]}, {v[1]}, {v[2]}]"
+func `$`*(v: IVec4): string = &"[{v[0]}, {v[1]}, {v[2]}, {v[3]}]"
 
 converter `Vector -> ptr Vector`*(v: Vector): ptr Vector = v.addr
 
