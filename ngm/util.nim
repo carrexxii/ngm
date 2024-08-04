@@ -33,4 +33,3 @@ func `~=`*(a, b: float32): bool = glm_eq a, b
 func lerp*(`from`, to, t: float32): float32 = `from`.glm_lerpc to, t
 
 {.pop.}
-

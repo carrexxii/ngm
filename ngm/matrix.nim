@@ -12,6 +12,10 @@ type
     Mat3x3* = Matrix[3, Vec3]
     Mat4x4* = Matrix[4, Vec4]
 
+    Mat2* = Mat2x2
+    Mat3* = Mat3x3
+    Mat4* = Mat4x4
+
 const
     Mat2x2Ident*: Mat2x2 = [[1, 0],
                             [0, 1]]
@@ -40,7 +44,6 @@ using
     cs, cangle: cfloat
     s ,  angle: float32
 
-{.emit: CGLMInclude.}
 {.push header: CGLMDir / "mat4.h".}
 proc mul*(m1p, m2p, dstmp)                 {.importc: "glm_mat4_mul"  .}
 proc scale*(mp; cs)                        {.importc: "glm_mat4_scale".}

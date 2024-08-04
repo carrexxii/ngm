@@ -147,7 +147,6 @@ macro gen_fns(fn_name, op: untyped; is_infix = true; is_calc = false): untyped =
                     proc `ident`*(v: ptr `vec_t`) {.header: `header`, importc: `name`.}
                     func `op`*(v: var `vec_t`) {.inline.} = `ident`(v)
 
-{.emit: CGLMInclude.}
 gen_fns negate_to   , `-`       , is_infix = false
 gen_fns normalize   , normalize , is_infix = false
 gen_fns normalize_to, normalized, is_infix = false
@@ -161,7 +160,6 @@ gen_fns dot      , `∙`  , is_calc = true
 gen_fns distance , `<->`, is_calc = true
 gen_fns distance2, `<=>`, is_calc = true
 
-# CGLM_INLINE float glm_vec3_angle(vec3 a, vec3 b);
 proc glm_vec2_angle*(v, u: ptr Vec2): float32 {.header: CGLMDir / "vec2.h", importc: "glm_vec2_angle".}
 proc glm_vec3_angle*(v, u: ptr Vec3): float32 {.header: CGLMDir / "vec3.h", importc: "glm_vec3_angle".}
 func angle*(v, u: Vec2): Radians = Radians glm_vec2_angle(v, u)
@@ -180,4 +178,3 @@ func rotated*(v: Vec2; angle: Radians): Vec2 =
 func rotated*(v, axis: Vec3; angle: Radians): Vec3 =
     result = v
     result.glm_vec3_rotate (float32 angle), axis
-

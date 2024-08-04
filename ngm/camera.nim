@@ -49,7 +49,6 @@ using
     dst : ptr Mat4x4
     proj: ptr Mat4x4
 
-{.emit: CGLMInclude.}
 {.push header: CGLMDir / "cam.h".}
 proc glm_frustum*(left, right, bottom, top, znear, zfar: cfloat; dst) {.importc: "glm_frustum"   .}
 proc glm_lookat*(eye, centre, up: ptr Vec3; dst)                      {.importc: "glm_lookat"    .}
