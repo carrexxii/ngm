@@ -12,10 +12,6 @@ converter `Quat -> ptr Quat`*(q: Quat): ptr Quat = q.addr
 func `[]`*(q: Quat; i: SomeInteger): float32 =
     cast[array[4, float32]](q)[i]
 
-func quat*(x, y, z, w: float32): Quat = Quat [x, y, z, w]
-
-const QuatIdent* = quat(0, 0, 0, 1)
-
 #[ -------------------------------------------------------------------- ]#
 
 {.push header: CGLMDir / "quat.h".}
@@ -51,6 +47,8 @@ proc glm_quat_rotate*(m: ptr Mat4; q: ptr Quat; dst: ptr Mat4)                  
 {.pop.}
 
 {.push inline.}
+
+func quat*(x, y, z, w: float32): Quat = Quat [x, y, z, w]
 
 func quat*(angle: Radians; x, y, z: float32): Quat = glm_quat(result, angle, x, y, z)
 func versor*(v, u: Vec3): Quat = glm_quat_from_vecs(v, u, result)
@@ -94,3 +92,5 @@ func rotated*(q: Quat; m: Mat4): Mat4 = glm_quat_rotate(m, q, result)
 func look*(eye: Vec3; orientation: Quat): Mat4 = glm_quat_look(eye, orientation, result)
 
 {.pop.}
+
+const QuatIdent* = quat(0, 0, 0, 1)
