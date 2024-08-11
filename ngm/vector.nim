@@ -25,12 +25,12 @@ type
     IVec3* = Vector[3, int32]
     IVec4* = Vector[4, int32]
 
-func vec*(x, y      : SomeNumber): Vec2 {.inline.} = [float32 x, float32 y]
-func vec*(x, y, z   : SomeNumber): Vec3 {.inline.} = [float32 x, float32 y, float32 z]
-func vec*(x, y, z, w: SomeNumber): Vec4 {.inline.} = [float32 x, float32 y, float32 z, float32 w]
-func ivec*(x, y      : SomeNumber): IVec2 {.inline.} = [int32 x, int32 y]
-func ivec*(x, y, z   : SomeNumber): IVec3 {.inline.} = [int32 x, int32 y, int32 z]
-func ivec*(x, y, z, w: SomeNumber): IVec4 {.inline.} = [int32 x, int32 y, int32 z, int32 w]
+func vec2*(x, y      : SomeNumber): Vec2 {.inline.} = [float32 x, float32 y]
+func vec3*(x, y, z   : SomeNumber): Vec3 {.inline.} = [float32 x, float32 y, float32 z]
+func vec4*(x, y, z, w: SomeNumber): Vec4 {.inline.} = [float32 x, float32 y, float32 z, float32 w]
+func ivec2*(x, y      : SomeNumber): IVec2 {.inline.} = [int32 x, int32 y]
+func ivec3*(x, y, z   : SomeNumber): IVec3 {.inline.} = [int32 x, int32 y, int32 z]
+func ivec4*(x, y, z, w: SomeNumber): IVec4 {.inline.} = [int32 x, int32 y, int32 z, int32 w]
 
 func `$`*(v: Vec2): string = &"[{v[0]:.2f}, {v[1]:.2f}]"
 func `$`*(v: Vec3): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}]"
@@ -98,13 +98,13 @@ macro `.=`*(v: Vector; fields, rhs: untyped): untyped =
                     `v`[`i`] = `internal_type`(`rhs`)
 
 const
-    Vec2Zero* = vec(0, 0)
-    Vec3Zero* = vec(0, 0, 0)
-    Vec4Zero* = vec(0, 0, 0, 0)
+    Vec2Zero* = vec2(0, 0)
+    Vec3Zero* = vec3(0, 0, 0)
+    Vec4Zero* = vec4(0, 0, 0, 0)
 
-    XAxis* = vec(1, 0, 0)
-    YAxis* = vec(0, 1, 0)
-    ZAxis* = vec(0, 0, 1)
+    XAxis* = vec3(1, 0, 0)
+    YAxis* = vec3(0, 1, 0)
+    ZAxis* = vec3(0, 0, 1)
 
 #[ -------------------------------------------------------------------- ]#
 

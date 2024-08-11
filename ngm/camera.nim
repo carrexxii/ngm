@@ -23,7 +23,7 @@ type
         speed*: float32 = 10.0'f32
         angle*: float32 = 0.0'f32
         zoom* : float32 = 1.0'f32
-        pos*  : Vec3 = vec(0, 0, 0)
+        pos*  : Vec3 = vec3(0, 0, 0)
         view* : Mat4x4 = Mat4x4Ident
         proj* : Mat4x4 = Mat4x4Ident
 
@@ -31,9 +31,9 @@ type
         proj_kind*: CameraProjection
         pan_speed*: float32 = 0.1'f32
         rot_speed*: float32 = 0.1'f32
-        pos*      : Vec3 = vec(1, 1, 1)
-        target*   : Vec3 = vec(0, 0, 0)
-        up*       : Vec3 = vec(0, 1, 0)
+        pos*      : Vec3 = vec3(1, 1, 1)
+        target*   : Vec3 = vec3(0, 0, 0)
+        up*       : Vec3 = vec3(0, 1, 0)
         view*     : Mat4x4 = Mat4x4Ident
         proj*     : Mat4x4 = Mat4x4Ident
 

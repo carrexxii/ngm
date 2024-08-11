@@ -1,28 +1,43 @@
-# import std/strutils, ngm
-# from std/strformat import `&`
+import std/[strutils, unittest, sugar], ngm
+from std/strformat import `&`
 
-# let
-#     x = 2'e1
-#     y = 4'e2
-#     z = 6'e0
+var
+    s = Scalar 3
+    v = vec(1, 2, 3)
+    b = bivec(3, 2, 1, 5, 4, 3)
+    t = trivec(3, 4, 5, 6)
+    a = AntiScalar 7
 
-# echo &"Testing PGA with blades {{{AllBlades.join \", \"}}} and basis vectors {{{FullBasis.join \", \"}}}"
+dump s
+dump v
+dump b
+dump t
+dump a
 
-# assert &"{x}, {y}, {z}" == "2.0e1, 4.0e2, 6.0e0"
-# assert &"{1'e1}, {2'e2}" == "1.0e1, 2.0e2"
-# assert &"{5'e12}" == "5.0e12"
+check:
+    s.grade == 0
+    v.grade == 1
+    b.grade == 2
+    t.grade == 3
+    a.grade == 4
 
-# assert 1'e1 + 1'e1 == 2'e1
-# assert 2'e1 + 4'e1 == 6'e1
-# assert 3'e2 + 4'e2 == 7'e2
-# assert 1'e0 + 1'e1                == vector(1, 1, 0)
-# assert 2'e0 + 43'e1 + 4'e2        == vector(2, 43, 4)
-# assert 1'e1 + 3'e12               == multivector(x = 1, xy = 3)
-# assert 1'e2 + 2'e2 + 3'e0 + 5'e12 == multivector(y = 3, w = 3, xy = 5)
+check:
+    s.antigrade == 4
+    v.antigrade == 3
+    b.antigrade == 2
+    t.antigrade == 1
+    a.antigrade == 0
 
-# echo 1'e1 * 1'e1
-# echo 1'e0 * 1'e0
+check:
+    s.bulk == s
+    v.bulk == vec3(v.x, v.y, v.z)
+    b.bulk == vec3(b.yz, b.zx, b.xy)
+    t.bulk == t.zyx
+    a.bulk == 0
 
-# # echo 1'e123 + 3'e1 + 5'e0
-# # echo 1'e20 + 3'e01
-
+check:
+    s.weight == 0
+    v.weight == v.w
+    b.weight == vec3(b.wx, b.wy, b.wz)
+    t.weight == vec3(t.wyz, t.wzx, t.wxy)
+    a.weight == a
