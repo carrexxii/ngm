@@ -52,11 +52,12 @@ task restore, "Fetch and build dependencies":
                 run cmd
 
 task test, "Run the project's tests":
-    --hints:off
-    let files = (list_files test_dir).filter_it(it.ends_with ".nim")
-    for file in files:
-        echo &"Running tests for '{file}'"
-        run &"nim c -r --hints:off -p:. {file}"
+    run &"nim c -r -p:. {test_dir}/main.nim"
+    # --hints:off
+    # let files = (list_files test_dir).filter_it(it.ends_with ".nim")
+    # for file in files:
+    #     echo &"Running tests for '{file}'"
+    #     run &"nim c -r --hints:off -p:. {file}"
     # run &"testament pattern \"{test_dir}/*.nim\""
 
 task info, "Print out information about the project":

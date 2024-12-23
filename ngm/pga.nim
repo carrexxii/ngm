@@ -69,15 +69,15 @@ func antigrade*(t: Trivec)    : int = 1
 func antigrade*(a: Antiscalar): int = 0
 
 func bulk*(s: Scalar)    : Scalar = s
-func bulk*(v: Vec)       : Vec3   = vec3(v.x, v.y, v.z)
-func bulk*(b: Bivec)     : Vec3   = vec3(b.yz, b.zx, b.xy)
+# func bulk*(v: Vec)       : Vec3   = vec(v.x, v.y, v.z)
+# func bulk*(b: Bivec)     : Vec3   = vec(b.yz, b.zx, b.xy)
 func bulk*(t: Trivec)    : Scalar = t.zyx
 func bulk*(a: Antiscalar): Scalar = Scalar 0
 
 func weight*(s: Scalar)    : Scalar     = Scalar 0
 func weight*(v: Vec)       : Scalar     = v.w
-func weight*(b: Bivec)     : Vec3       = vec3(b.wx, b.wy, b.wz)
-func weight*(t: Trivec)    : Vec3       = vec3(t.wyz, t.wzx, t.wxy)
+# func weight*(b: Bivec)     : Vec3       = vec(b.wx, b.wy, b.wz)
+# func weight*(t: Trivec)    : Vec3       = vec(t.wyz, t.wzx, t.wxy)
 func weight*(a: Antiscalar): Antiscalar = a
 
 func `●`*(x: AnyGrade): auto = x.bulk

@@ -28,8 +28,6 @@ func glm_smoothinterpc*(`from`, to, t: float32): float32 {.importc: "glm_smoothi
 converter `Degrees -> Radians`*(x: Degrees): Radians = Radians glm_rad (float32 x)
 converter `Radians -> Degrees`*(x: Radians): Degrees = Degrees glm_deg (float32 x)
 
-func `~=`*(a, b: float32): bool = glm_eq a, b
-
 func lerp*(`from`, to, t: float32): float32 = `from`.glm_lerpc to, t
 
 {.pop.}

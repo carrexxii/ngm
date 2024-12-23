@@ -114,6 +114,8 @@ proc unproject*(v: var Vec3; mat: Mat4x4; viewport: Vec4) =
     let cp = v
     unproject cp, mat, viewport.addr, v
 
+proc inv*(mat: Mat4x4): Mat4x4 = mat.addr.inv result.addr
+
 {.pop.}
 
 # TODO

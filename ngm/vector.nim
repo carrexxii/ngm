@@ -3,11 +3,6 @@
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
 {.experimental: "dotOperators".}
-{.emit: """
-#define glm_vec2_muls(a, b, d) glm_vec2_scale(a, b, d)
-#define glm_vec3_muls(a, b, d) glm_vec3_scale(a, b, d)
-#define glm_vec4_muls(a, b, d) glm_vec4_scale(a, b, d)
-""".}
 
 import std/[macros, strutils], common, util
 from std/sequtils  import map_it, zip
@@ -25,12 +20,14 @@ type
     IVec3* = Vector[3, int32]
     IVec4* = Vector[4, int32]
 
-func vec2*(x, y      : SomeNumber): Vec2 {.inline.} = [float32 x, float32 y]
-func vec3*(x, y, z   : SomeNumber): Vec3 {.inline.} = [float32 x, float32 y, float32 z]
-func vec4*(x, y, z, w: SomeNumber): Vec4 {.inline.} = [float32 x, float32 y, float32 z, float32 w]
-func ivec2*(x, y      : SomeNumber): IVec2 {.inline.} = [int32 x, int32 y]
-func ivec3*(x, y, z   : SomeNumber): IVec3 {.inline.} = [int32 x, int32 y, int32 z]
-func ivec4*(x, y, z, w: SomeNumber): IVec4 {.inline.} = [int32 x, int32 y, int32 z, int32 w]
+{.push inline.}
+func  vec*(x, y      : SomeNumber):  Vec2 = [float32 x, float32 y]
+func  vec*(x, y, z   : SomeNumber):  Vec3 = [float32 x, float32 y, float32 z]
+func  vec*(x, y, z, w: SomeNumber):  Vec4 = [float32 x, float32 y, float32 z, float32 w]
+func ivec*(x, y      : SomeNumber): IVec2 = [int32 x, int32 y]
+func ivec*(x, y, z   : SomeNumber): IVec3 = [int32 x, int32 y, int32 z]
+func ivec*(x, y, z, w: SomeNumber): IVec4 = [int32 x, int32 y, int32 z, int32 w]
+{.pop.}
 
 func `$`*(v: Vec2): string = &"[{v[0]:.2f}, {v[1]:.2f}]"
 func `$`*(v: Vec3): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}]"
@@ -98,24 +95,27 @@ macro `.=`*(v: Vector; fields, rhs: untyped): untyped =
                     `v`[`i`] = `internal_type`(`rhs`)
 
 const
-    Vec2Zero* = vec2(0, 0)
-    Vec3Zero* = vec3(0, 0, 0)
-    Vec4Zero* = vec4(0, 0, 0, 0)
+    Vec2Zero* = vec(0, 0)
+    Vec3Zero* = vec(0, 0, 0)
+    Vec4Zero* = vec(0, 0, 0, 0)
 
-    XAxis* = vec3(1, 0, 0)
-    YAxis* = vec3(0, 1, 0)
-    ZAxis* = vec3(0, 0, 1)
+    XAxis* = vec(1, 0, 0)
+    YAxis* = vec(0, 1, 0)
+    ZAxis* = vec(0, 0, 1)
 
 #[ -------------------------------------------------------------------- ]#
 
+func `~=`*(v, u: Vec2): bool = (v.x ~= u.x) and (v.y ~= u.y)
+func `~=`*(v, u: Vec3): bool = (v.x ~= u.x) and (v.y ~= u.y) and (v.z ~= u.z)
+
 macro gen_fns(fn_name, op: untyped; is_infix = true; is_calc = false): untyped =
     result = new_nim_node nnkStmtList
-    let is_infix = is_infix == (new_lit true)
-    let is_calc  = is_calc  == (new_lit true) # Calculations return a scalar value like the dot product
+    let is_infix = is_infix == new_lit true
+    let is_calc  = is_calc  == new_lit true # Calculations return a scalar value like the dot product
     for n in 2..4:
         let
-            name     = "glm_vec$1_$2"  % [$n, $fn_name]
-            name_s   = "glm_vec$1_$2s" % [$n, $fn_name]
+            name     = "glm_vec$1_$2" % [$n, $fn_name]
+            name_s   = ("glm_vec$1_$2s" % [$n, $fn_name]).replace("muls", "scale")
             ident    = ident name
             idents   = ident name_s
             header   = CGLMDir / ("vec$1.h" % $n)

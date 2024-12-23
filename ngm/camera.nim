@@ -23,25 +23,25 @@ type
         speed*: float32 = 10.0'f32
         angle*: float32 = 0.0'f32
         zoom* : float32 = 1.0'f32
-        pos*  : Vec3 = vec3(0, 0, 0)
-        view* : Mat4x4 = Mat4x4Ident
-        proj* : Mat4x4 = Mat4x4Ident
+        pos*  : Vec3    = vec(0, 0, 0)
+        view* : Mat4x4  = Mat4x4Ident
+        proj* : Mat4x4  = Mat4x4Ident
 
     Camera3D* = object
         proj_kind*: CameraProjection
         pan_speed*: float32 = 0.1'f32
         rot_speed*: float32 = 0.1'f32
-        pos*      : Vec3 = vec3(1, 1, 1)
-        target*   : Vec3 = vec3(0, 0, 0)
-        up*       : Vec3 = vec3(0, 1, 0)
+        pos*      : Vec3 = vec( 1,  1,  0)
+        dir*      : Vec3 = vec(-1, -1,  0)
+        up*       : Vec3 = vec( 0,  0, -1)
+        znear*    : float32
+        zfar*     : float32
         view*     : Mat4x4 = Mat4x4Ident
         proj*     : Mat4x4 = Mat4x4Ident
+        proj_inv* : Mat4x4 = Mat4x4Ident
 
-func dir*(cam: Camera3D): Vec3 {.inline.} =
-    cam.target - cam.pos
-
-func right*(cam: Camera3D): Vec3 {.inline.} =
-    normalized (cam.dir × cam.up)
+func right*(cam: Camera3D): Vec3 {.inline.} = normalized (cam.dir × cam.up)
+func up*(cam: Camera3D): Vec3    {.inline.} = normalized (cam.right × (cam.dir - cam.pos))
 
 #[ -------------------------------------------------------------------- ]#
 
@@ -49,7 +49,7 @@ using
     dst : ptr Mat4x4
     proj: ptr Mat4x4
 
-{.push header: CGLMDir / "cam.h".}
+{.push header: CglmDir / "cam.h".}
 proc glm_frustum*(left, right, bottom, top, znear, zfar: cfloat; dst) {.importc: "glm_frustum"   .}
 proc glm_lookat*(eye, centre, up: ptr Vec3; dst)                      {.importc: "glm_lookat"    .}
 proc glm_look*(eye, dir, up: ptr Vec3; dst)                           {.importc: "glm_look"      .}
@@ -86,10 +86,10 @@ proc orthogonal_default*(aspect: float32 = 16/9): Mat4x4 =
     glm_ortho_default aspect, result
 
 proc perspective*(yfov, aspect, znear, zfar: float32): Mat4x4 =
-    glm_perspective yfov, aspect, znear, zfar, result
+    glm_perspective cfloat yfov, cfloat aspect, cfloat znear, cfloat zfar, result.addr
 
 proc perspective_default*(aspect: float32 = 16/9): Mat4x4 =
-    glm_perspective_default aspect, result
+    glm_perspective_default cfloat aspect, result.addr
 
 {.pop.}
 
@@ -101,14 +101,16 @@ func look*(cam: var Camera3D) =
     glm_look cam.pos, cam.dir, cam.up, cam.view
 
 func set_orthogonal*(cam: var (Camera2D | Camera3D); aspect: float32) =
+    cam.proj = orthogonal_default aspect
     when cam is Camera3D:
         cam.proj_kind = cpOrthogonal
-    cam.proj = orthogonal_default aspect
+        cam.proj_inv  = inv cam.proj
 
 func set_orthogonal*(cam: var (Camera2D | Camera3D); l, r, b, t, zn, zf: float32) =
+    cam.proj = orthogonal(l, r, b, t, zn, zf)
     when cam is Camera3D:
         cam.proj_kind = cpOrthogonal
-    cam.proj = orthogonal(l, r, b, t, zn, zf)
+        cam.proj_inv  = inv cam.proj
 
 func set_orthogonal*(cam: var Camera2D; w, h: SomeNumber) =
     let w = (float32 w) / 2 / cam.zoom
@@ -116,9 +118,12 @@ func set_orthogonal*(cam: var Camera2D; w, h: SomeNumber) =
     cam.set_orthogonal -w, w, -h, h, -1, 1
 
 func set_perspective*(cam: var (Camera2D | Camera3D); fov, aspect, znear, zfar: float32) =
+    cam.proj  = perspective(fov, aspect, znear, zfar)
+    cam.znear = znear
+    cam.zfar  = zfar
     when cam is Camera3D:
         cam.proj_kind = cpPerspective
-    cam.proj = perspective(fov, aspect, znear, zfar)
+        cam.proj_inv  = inv cam.proj
 
 func update*(cam: var Camera2D) =
     cam.view[3].x = cam.pos.x
@@ -131,59 +136,58 @@ func update*(cam: var Camera3D) =
 
 {.pop.}
 
-func yaw*(cam: var Camera3D; angle: Radians) {.inline.} =
-    cam.target = cam.pos + cam.dir.rotated(cam.up, angle)
-
-func pitch*(cam: var Camera3D; angle: Radians; lock_view = true) {.inline.} =
-    var target = cam.dir
-    var angle_to_rotate = angle
-    if lock_view:
-        let max_angle_up   = cam.up.angle target
-        let max_angle_down = (-cam.up).angle target
-        angle_to_rotate = angle_to_rotate.clamp(-max_angle_down, max_angle_up)
-
-    target.rotate cam.right, angle_to_rotate
-    cam.target = cam.pos + target
-
-func roll*(cam: var Camera3D; angle: Radians) {.inline.} =
-    cam.up.rotate cam.dir, angle
-
-func move*(cam: var Camera2D; dir: CameraDirection; dt: float) =
-    case dir
-    of cdNone: return
-    of cdUp   : cam.pos.y -= cam.speed * dt
-    of cdDown : cam.pos.y += cam.speed * dt
-    of cdLeft : cam.pos.x += cam.speed * dt
-    of cdRight: cam.pos.x -= cam.speed * dt
-    else: assert false, "Zooming"
+func yaw*(cam: var Camera3D; angle: Radians)   {.inline.} = cam.dir.rotate cam.up   , angle
+func pitch*(cam: var Camera3D; angle: Radians) {.inline.} = cam.dir.rotate cam.right, angle
+func roll*(cam: var Camera3D; angle: Radians)  {.inline.} = cam.up.rotate  cam.dir  , angle
 
 func move*(cam: var Camera3D; dir: CameraDirection) =
+    let right = cam.right
+    let up    = normalized (right × (cam.dir - cam.pos))
     case dir
-    of cdNone: discard
-    of cdForwards, cdBackwards:
-        var fwd = cam.dir
-        if cam.proj_kind == cpOrthogonal:
-            fwd.y = 0
-            normalize fwd
+    of cdRight    : cam.pos += right*cam.pan_speed
+    of cdLeft     : cam.pos -= right*cam.pan_speed
+    of cdUp       : cam.pos += up*cam.pan_speed
+    of cdDown     : cam.pos -= up*cam.pan_speed
+    of cdForwards : cam.pos += cam.dir*cam.pan_speed
+    of cdBackwards: cam.pos -= cam.dir*cam.pan_speed
+    else:
+        discard
 
-        fwd *= (if dir == cdForwards: cam.pan_speed else: -cam.pan_speed)
-        cam.pos    += fwd
-        cam.target += fwd
-    of cdUp, cdDown:
-        let dist = cam.up * (if dir == cdUp: cam.pan_speed else: -cam.pan_speed)
-        cam.pos    += dist
-        cam.target += dist
-    of cdLeft, cdRight:
-        var right = cam.right
-        if cam.proj_kind == cpOrthogonal:
-            right.y = 0
-            normalize right
+# func move*(cam: var Camera2D; dir: CameraDirection; dt: float) =
+#     case dir
+#     of cdNone: return
+#     of cdUp   : cam.pos.y -= cam.speed * dt
+#     of cdDown : cam.pos.y += cam.speed * dt
+#     of cdLeft : cam.pos.x += cam.speed * dt
+#     of cdRight: cam.pos.x -= cam.speed * dt
+#     else: assert false, "Zooming"
 
-        right *= (if dir == cdRight: cam.pan_speed else: -cam.pan_speed)
-        cam.pos    += right
-        cam.target += right
+# func move*(cam: var Camera3D; dir: CameraDirection) =
+#     case dir
+#     of cdNone: discard
+#     of cdForwards, cdBackwards:
+#         var fwd = cam.dir
+#         if cam.proj_kind == cpOrthogonal:
+#             fwd.y = 0
+#             normalize fwd
 
-func move*(cam: var Camera3D; mouse_delta: Vec2; mouse_sensitivity = DefaultMouseSensitivity) =
-    cam.yaw   Radians (mouse_delta.x * mouse_sensitivity)
-    cam.pitch Radians (mouse_delta.y * mouse_sensitivity)
+#         fwd *= (if dir == cdForwards: cam.pan_speed else: -cam.pan_speed)
+#         cam.pos    += fwd
+#         cam.target += fwd
+#     of cdUp, cdDown:
+#         let dist = cam.up * (if dir == cdUp: cam.pan_speed else: -cam.pan_speed)
+#         cam.pos    += dist
+#         cam.target += dist
+#     of cdLeft, cdRight:
+#         var right = cam.right
+#         if cam.proj_kind == cpOrthogonal:
+#             right.y = 0
+#             normalize right
 
+#         right *= (if dir == cdRight: cam.pan_speed else: -cam.pan_speed)
+#         cam.pos    += right
+#         cam.target += right
+
+# func move*(cam: var Camera3D; mouse_delta: Vec2; mouse_sensitivity = DefaultMouseSensitivity) =
+#     cam.yaw   Radians (mouse_delta.x * mouse_sensitivity)
+#     cam.pitch Radians (mouse_delta.y * mouse_sensitivity)
