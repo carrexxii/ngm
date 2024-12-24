@@ -2,7 +2,7 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import common, vector
+import common, util, vector
 
 type
     Point2D* = object
@@ -23,6 +23,9 @@ func point*(x, y, z: SomeNumber): Point3D = Point3D(x: Real x, y: Real y, z: Rea
 
 func point*(v: Vec2): Point2D = Point2D(x: v.x, y: v.y)
 func point*(v: Vec3): Point3D = Point3D(x: v.x, y: v.y, z: v.z)
+
+func vec*(p: Point2D): Vec2 = vec(p.x, p.y)
+func vec*(p: Point3D): Vec3 = vec(p.x, p.y, p.z)
 
 func arr*(p: Point2D): array[2, Real] = [p.x, p.y]
 func arr*(p: Point3D): array[3, Real] = [p.x, p.y, p.z]
@@ -52,6 +55,8 @@ func `*`*(p: Point2D; s: Real): Point2D = s*p
 func `*`*(p: Point3D; s: Real): Point3D = s*p
 func `*=`*(p: var Point2D; s: Real) = p = s*p
 func `*=`*(p: var Point3D; s: Real) = p = s*p
+
+func centre*[T: Point2D | Point3D](p1, p2: T): T = (p1 + vec(p2))*0.5
 
 {.pop.}
 

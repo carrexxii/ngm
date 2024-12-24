@@ -4,46 +4,42 @@
 
 {.experimental: "dotOperators".}
 
-import std/[macros, strutils], common, util
-from std/sequtils  import map_it, zip
+import std/[macros, strutils, math, options], common, util
+from std/sequtils import map_it, zip
 
 const VectorFields = "xyzw"
 
 type
-    Vector*[N: static int, T] = array[N, T]
+    Vec2* = array[2, Real]
+    Vec3* = array[3, Real]
+    Vec4* = array[4, Real]
 
-    Vec2* = Vector[2, float32]
-    Vec3* = Vector[3, float32]
-    Vec4* = Vector[4, float32]
-
-    IVec2* = Vector[2, int32]
-    IVec3* = Vector[3, int32]
-    IVec4* = Vector[4, int32]
+    AnyVec = Vec2 | Vec3 | Vec4
 
 {.push inline.}
-func  vec*(x, y      : SomeNumber):  Vec2 = [float32 x, float32 y]
-func  vec*(x, y, z   : SomeNumber):  Vec3 = [float32 x, float32 y, float32 z]
-func  vec*(x, y, z, w: SomeNumber):  Vec4 = [float32 x, float32 y, float32 z, float32 w]
-func ivec*(x, y      : SomeNumber): IVec2 = [int32 x, int32 y]
-func ivec*(x, y, z   : SomeNumber): IVec3 = [int32 x, int32 y, int32 z]
-func ivec*(x, y, z, w: SomeNumber): IVec4 = [int32 x, int32 y, int32 z, int32 w]
-{.pop.}
 
-func `$`*(v: Vec2): string = &"[{v[0]:.2f}, {v[1]:.2f}]"
-func `$`*(v: Vec3): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}]"
-func `$`*(v: Vec4): string = &"[{v[0]:.2f}, {v[1]:.2f}, {v[2]:.2f}, {v[3]:.2f}]"
-func `$`*(v: IVec2): string = &"[{v[0]}, {v[1]}]"
-func `$`*(v: IVec3): string = &"[{v[0]}, {v[1]}, {v[2]}]"
-func `$`*(v: IVec4): string = &"[{v[0]}, {v[1]}, {v[2]}, {v[3]}]"
+func `$`*(v: Vec2): string = &"({v[0]}, {v[1]})"
+func `$`*(v: Vec3): string = &"({v[0]}, {v[1]}, {v[2]})"
+func `$`*(v: Vec4): string = &"({v[0]}, {v[1]}, {v[2]}, {v[3]})"
 
-converter `Vector -> ptr Vector`*(v: Vector): ptr Vector = v.addr
+func repr*(v: Vec2): string = &"Vec2 (x: {v[0]}, y: {v[1]})"
+func repr*(v: Vec3): string = &"Vec3 (x: {v[0]}, y: {v[1]}, z: {v[2]})"
+func repr*(v: Vec4): string = &"Vec4 (x: {v[0]}, y: {v[1]}, z: {v[2]}, w: {v[3]})"
+
+func vec2*(x: SomeNumber = 0, y: SomeNumber = 0): Vec2                                       = [Real x, Real y]
+func vec3*(x: SomeNumber = 0, y: SomeNumber = 0, z: SomeNumber = 0): Vec3                    = [Real x, Real y, Real z]
+func vec4*(x: SomeNumber = 0, y: SomeNumber = 0, z: SomeNumber = 0, w: SomeNumber = 0): Vec4 = [Real x, Real y, Real z, Real w]
+
+func vec*(x, y      : SomeNumber): Vec2 = vec2 x, y
+func vec*(x, y, z   : SomeNumber): Vec3 = vec3 x, y, z
+func vec*(x, y, z, w: SomeNumber): Vec4 = vec4 x, y, z, w
 
 func to_inds(fields: string): seq[int] =
     result = fields.map_it VectorFields.find it
     assert -1 notin result:
-        &"Invalid swizzle fields for vector: '{fields}'. Valid fields include '{VectorFields}' ({fields} -> {result})"
+        &"\nInvalid swizzle fields for vector: '{fields}'. Valid fields include '{VectorFields}' ({fields} -> {result})"
 
-macro `.`*(v: Vector; fields: untyped): untyped =
+macro `.`*(v: AnyVec; fields: untyped): untyped =
     let inds = to_inds fields.repr
     if inds.len == 1:
         let i = inds[0]
@@ -56,7 +52,7 @@ macro `.`*(v: Vector; fields: untyped): untyped =
             result.add quote do:
                 `v`[`i`]
 
-macro `.=`*(v: Vector; fields, rhs: untyped): untyped =
+macro `.=`*(v: AnyVec; fields, rhs: untyped): untyped =
     let (lhs_count, lhs_inds) = (fields.repr.len, to_inds fields.repr)
     let (rhs_count, rhs_inds) = case rhs.kind
         of nnkIntLit, nnkFloatLit    : (1, @[])
@@ -94,87 +90,127 @@ macro `.=`*(v: Vector; fields, rhs: untyped): untyped =
                 result.add quote do:
                     `v`[`i`] = `internal_type`(`rhs`)
 
-const
-    Vec2Zero* = vec(0, 0)
-    Vec3Zero* = vec(0, 0, 0)
-    Vec4Zero* = vec(0, 0, 0, 0)
-
-    XAxis* = vec(1, 0, 0)
-    YAxis* = vec(0, 1, 0)
-    ZAxis* = vec(0, 0, 1)
-
 #[ -------------------------------------------------------------------- ]#
+
+func `==`*(v, u: Vec2): bool = (v.x == u.x) and (v.y == u.y)
+func `==`*(v, u: Vec3): bool = (v.x == u.x) and (v.y == u.y) and (v.z == u.z)
+func `==`*(v, u: Vec4): bool = (v.x == u.x) and (v.y == u.y) and (v.z == u.z) and (v.w == u.w)
 
 func `~=`*(v, u: Vec2): bool = (v.x ~= u.x) and (v.y ~= u.y)
 func `~=`*(v, u: Vec3): bool = (v.x ~= u.x) and (v.y ~= u.y) and (v.z ~= u.z)
+func `~=`*(v, u: Vec4): bool = (v.x ~= u.x) and (v.y ~= u.y) and (v.z ~= u.z) and (v.w ~= u.w)
 
-macro gen_fns(fn_name, op: untyped; is_infix = true; is_calc = false): untyped =
-    result = new_nim_node nnkStmtList
-    let is_infix = is_infix == new_lit true
-    let is_calc  = is_calc  == new_lit true # Calculations return a scalar value like the dot product
-    for n in 2..4:
-        let
-            name     = "glm_vec$1_$2" % [$n, $fn_name]
-            name_s   = ("glm_vec$1_$2s" % [$n, $fn_name]).replace("muls", "scale")
-            ident    = ident name
-            idents   = ident name_s
-            header   = CGLMDir / ("vec$1.h" % $n)
-            vec_t    = ident ("Vec$1" % $n)
-            scalar_t = ident "float32"
-        if is_calc:
-            result.add quote do:
-                proc `ident`* (v, u: ptr `vec_t`): `scalar_t` {.header: `header`, importc: `name`.}
-                func `fn_name`*(v, u: `vec_t`): `scalar_t` {.inline.} = `ident`(v, u)
-                func `op`*(v, u: `vec_t`): `scalar_t`      {.inline.} = `ident`(v, u)
-        elif is_infix:
-            let eq_op = ident ($op & "=")
-            result.add quote do:
-                proc `ident`* (v, u, dst: ptr `vec_t`)                          {.header: `header`, importc: `name`  .}
-                proc `idents`*(v: ptr `vec_t`; s: `scalar_t`; dst: ptr `vec_t`) {.header: `header`, importc: `name_s`.}
-                func `fn_name`*(v, u: `vec_t`): `vec_t`             {.inline.} = `ident`(v, u, result)
-                func `fn_name`*(v: `vec_t`; s: `scalar_t`): `vec_t` {.inline.} = `idents`(v, s, result)
-                func `op`*(v, u: `vec_t`): `vec_t`                  {.inline.} = `ident`(v, u, result)
-                func `op`*(v: `vec_t`; s: `scalar_t`): `vec_t`      {.inline.} = `idents`(v, s, result)
-                func `eq_op`*(v: var `vec_t`; u: `vec_t`)           {.inline.} = v = `op`(v, u)
-                func `eq_op`*(v: var `vec_t`; s: `scalar_t`)        {.inline.} = v = `op`(v, s)
-        else:
-            if ($name).ends_with "_to":
-                result.add quote do:
-                    proc `ident`*(v, dst: ptr `vec_t`) {.header: `header`, importc: `name`.}
-                    func `op`*(v: `vec_t`): `vec_t` {.inline.} = `ident`(v, result)
-            else:
-                result.add quote do:
-                    proc `ident`*(v: ptr `vec_t`) {.header: `header`, importc: `name`.}
-                    func `op`*(v: var `vec_t`) {.inline.} = `ident`(v)
+func clamped*(v: Vec2; min, max: SomeNUmber): Vec2 =
+    let min = Real min
+    let max = Real max
+    vec(v.x.clamp(min, max), v.y.clamp(min, max))
+func clamped*(v: Vec3; min, max: SomeNUmber): Vec3 =
+    let min = Real min
+    let max = Real max
+    vec(v.x.clamp(min, max), v.y.clamp(min, max), v.z.clamp(min, max))
+func clamped*(v: Vec4; min, max: SomeNUmber): Vec4 =
+    let min = Real min
+    let max = Real max
+    vec(v.x.clamp(min, max), v.y.clamp(min, max), v.z.clamp(min, max), v.w.clamp(min, max))
+func clamped*(v: Vec2; min, max: Vec2): Vec2 = vec(v.x.clamp(min.x, max.x), v.y.clamp(min.y, max.y))
+func clamped*(v: Vec3; min, max: Vec3): Vec3 = vec(v.x.clamp(min.x, max.x), v.y.clamp(min.y, max.y), v.z.clamp(min.z, max.z))
+func clamped*(v: Vec4; min, max: Vec4): Vec4 = vec(v.x.clamp(min.x, max.x), v.y.clamp(min.y, max.y), v.z.clamp(min.z, max.z), v.w.clamp(min.w, max.w))
 
-gen_fns negate_to   , `-`       , is_infix = false
-gen_fns normalize   , normalize , is_infix = false
-gen_fns normalize_to, normalized, is_infix = false
+func clamp*[T: AnyVec](v: var T; min, max: Real) = v = v.clamped(min, max)
+func clamp*[T: AnyVec](v: var T; min, max: T)    = v = v.clamped(min, max)
 
-gen_fns add  , `+`
-gen_fns sub  , `-`
-gen_fns mul  , `*`
-gen_fns `div`, `/`
+func `-`*(v: Vec2): Vec2 = vec(-v.x, -v.y)
+func `-`*(v: Vec3): Vec3 = vec(-v.x, -v.y, -v.z)
+func `-`*(v: Vec4): Vec4 = vec(-v.x, -v.y, -v.z, -v.w)
 
-gen_fns dot      , `∙`  , is_calc = true
-gen_fns distance , `<->`, is_calc = true
-gen_fns distance2, `<=>`, is_calc = true
+func `+`*(v, u: Vec2): Vec2 = vec(v.x + u.x, v.y + u.y)
+func `+`*(v, u: Vec3): Vec3 = vec(v.x + u.x, v.y + u.y, v.z + u.z)
+func `+`*(v, u: Vec4): Vec4 = vec(v.x + u.x, v.y + u.y, v.z + u.z, v.w + u.w)
+func `+=`*[T: AnyVec](v: var T; u: T) = v = v + u
 
-proc glm_vec2_angle*(v, u: ptr Vec2): float32 {.header: CGLMDir / "vec2.h", importc: "glm_vec2_angle".}
-proc glm_vec3_angle*(v, u: ptr Vec3): float32 {.header: CGLMDir / "vec3.h", importc: "glm_vec3_angle".}
-func angle*(v, u: Vec2): Radians = Radians glm_vec2_angle(v, u)
-func angle*(v, u: Vec3): Radians = Radians glm_vec3_angle(v, u)
+func `-`*(v, u: Vec2): Vec2 = vec(v.x - u.x, v.y - u.y)
+func `-`*(v, u: Vec3): Vec3 = vec(v.x - u.x, v.y - u.y, v.z - u.z)
+func `-`*(v, u: Vec4): Vec4 = vec(v.x - u.x, v.y - u.y, v.z - u.z, v.w - u.w)
+func `-=`*[T: AnyVec](v: var T; u: T) = v = v - u
 
-proc glm_vec3_cross*(v, u, dst: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_cross".}
-func cross*(v, u: Vec3): Vec3 {.inline.} = glm_vec3_cross v, u, result
-func `×`*  (v, u: Vec3): Vec3 {.inline.} = glm_vec3_cross v, u, result
+func `*`*(v: Vec2; s: SomeNumber): Vec2 = vec(v.x * Real s, v.y * Real s)
+func `*`*(v: Vec3; s: SomeNumber): Vec3 = vec(v.x * Real s, v.y * Real s, v.z * Real s)
+func `*`*(v: Vec4; s: SomeNumber): Vec4 = vec(v.x * Real s, v.y * Real s, v.z * Real s, v.w * Real s)
+func `*=`*[T: AnyVec](v: var T; s: SomeNumber) = v = v * s
 
-proc glm_vec2_rotate*(v: ptr Vec2; angle: float32; dest: ptr Vec2) {.header: CGLMDir / "vec2.h", importc: "glm_vec2_rotate".}
-proc glm_vec3_rotate*(v: ptr Vec3; angle: float32; axis: ptr Vec3) {.header: CGLMDir / "vec3.h", importc: "glm_vec3_rotate".}
-func rotate*(v: var Vec2; angle: Radians) = v.glm_vec2_rotate (float32 angle), v
-func rotate*(v: var Vec3; axis: Vec3; angle: Radians) = v.glm_vec3_rotate (float32 angle), axis
-func rotated*(v: Vec2; angle: Radians): Vec2 =
-    v.glm_vec2_rotate (float32 angle), result
-func rotated*(v, axis: Vec3; angle: Radians): Vec3 =
-    result = v
-    result.glm_vec3_rotate (float32 angle), axis
+func `/`*(v: Vec2; s: SomeNumber): Vec2 = vec(v.x / Real s, v.y / Real s)
+func `/`*(v: Vec3; s: SomeNumber): Vec3 = vec(v.x / Real s, v.y / Real s, v.z / Real s)
+func `/`*(v: Vec4; s: SomeNumber): Vec4 = vec(v.x / Real s, v.y / Real s, v.z / Real s, v.w / Real s)
+func `/=`*[T: AnyVec](v: var T; s: SomeNumber) = v = v / s
+
+# \bullet
+func dot*(v, u: Vec2): Real = v.x*u.x + v.y*u.y
+func dot*(v, u: Vec3): Real = v.x*u.x + v.y*u.y + v.z*u.z
+func dot*(v, u: Vec4): Real = v.x*u.x + v.y*u.y + v.z*u.z + v.w*u.w
+func `∙`*(v, u: AnyVec): Real = dot v, u
+
+func norm2*[T: AnyVec](v: T): Real = v∙v
+func norm*[T: AnyVec](v: T): Real  = sqrt(norm2 v)
+func mag*(v: Vec2 | Vec3): Real   = norm v
+func len*(v: Vec2 | Vec3): Real   = norm v
+
+func normalized*[T: AnyVec](v: T): T =
+    let mag = mag v
+    if mag != 0:
+        result = v / mag
+func normalize*(v: var AnyVec) = v = normalized v
+
+func distance2*(v, u: Vec2): Real = (v.x - u.x)^2 + (v.y - u.y)^2
+func distance2*(v, u: Vec3): Real = (v.x - u.x)^2 + (v.y - u.y)^2 + (v.z - u.z)^2
+func distance*(v, u: Vec2 | Vec3): Real = sqrt distance2(v, u)
+func `<=>`*(v, u: Vec2 | Vec3): Real = distance2 v, u
+func `<->`*(v, u: Vec2 | Vec3): Real = distance  v, u
+
+func angle*(v, u: Vec2 | Vec3): Radians =
+    arccos((v ∙ u) / (v.mag * u.mag))
+
+func cross*(v, u: Vec3): Vec3 =
+    vec(v.y*u.z - v.z*u.y,
+        v.z*u.x - v.x*u.z,
+        v.x*u.y - v.y*u.x)
+func `×`*(v, u: Vec3): Vec3 = cross v, u
+
+func rotated*(v: Vec2; α: Radians): Vec2 =
+    ## Rotates CCW
+    let cosa = cos float32 α
+    let sina = sin float32 α
+    vec(cosa*v.x - sina*v.y, sina*v.x + cosa*v.y)
+
+func rotated*(v: Vec3; α: Radians; axis: Vec3): Vec3 =
+    ## Rodrigues' rotation formula
+    ## `v = v*cos(α) + (k×v)sin(α) + k*(k∙v)(1 - cos(α))`
+    ## where `k` is the axis of rotation
+    ## Axis should already be normalized
+    ngm_assert (axis.mag ~= 1.0), "Axis should be normalized before rotation"
+
+    let cosa = cos float32 α
+    let sina = sin float32 α
+    v*cosa + (axis × v)*sina + axis*(axis ∙ v)*(1 - cosa)
+
+func rotate*(v: var Vec2; α: Radians): Vec2             = v = rotated(v, α)
+func rotate*(v: var Vec3; α: Radians; axis: Vec3): Vec3 = v = rotated(v, α, axis)
+
+func reflected*[T: Vec2 | Vec3](v, n: T): T   = v - 2*(v∙n)*n
+func reflect*[T: Vec2 | Vec3](v: var T; n: T) = v = reflected(v, n)
+
+func refracted*[T: Vec2 | Vec3](v, n: T; μ: Real): Option[T] =
+    ## Normal should already be normlized
+    ngm_assert (n.mag ~= 1), "Normal should be normalized before refraction"
+
+    let dp = n∙v
+    let k  = 1 - (μ^2)*(1 - dp^2)
+    if k < 0:
+        return none[T]
+    some (sqrt(k)*n + μ*(v - dp*n))
+
+func refract*[T: Vec2 | Vec3](v: var T; n: T; μ: Real): bool =
+    let r = refracted(v, n, μ)
+    result = r.is_some
+    v = if result: get r else: vec3()
+
+{.pop.}
