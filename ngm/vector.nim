@@ -30,9 +30,9 @@ func vec2*(x: SomeNumber = 0, y: SomeNumber = 0): Vec2                          
 func vec3*(x: SomeNumber = 0, y: SomeNumber = 0, z: SomeNumber = 0): Vec3                    = [Real x, Real y, Real z]
 func vec4*(x: SomeNumber = 0, y: SomeNumber = 0, z: SomeNumber = 0, w: SomeNumber = 0): Vec4 = [Real x, Real y, Real z, Real w]
 
-func vec*(x, y      : SomeNumber): Vec2 = vec2 x, y
-func vec*(x, y, z   : SomeNumber): Vec3 = vec3 x, y, z
-func vec*(x, y, z, w: SomeNumber): Vec4 = vec4 x, y, z, w
+func vec*(x: SomeNumber, y: SomeNumber): Vec2                               = vec2 x, y
+func vec*(x: SomeNumber, y: SomeNumber, z: SomeNumber): Vec3                = vec3 x, y, z
+func vec*(x: SomeNumber, y: SomeNumber, z: SomeNumber, w: SomeNumber): Vec4 = vec4 x, y, z, w
 
 func to_inds(fields: string): seq[int] =
     result = fields.map_it VectorFields.find it
@@ -96,9 +96,9 @@ func `==`*(v, u: Vec2): bool = (v.x == u.x) and (v.y == u.y)
 func `==`*(v, u: Vec3): bool = (v.x == u.x) and (v.y == u.y) and (v.z == u.z)
 func `==`*(v, u: Vec4): bool = (v.x == u.x) and (v.y == u.y) and (v.z == u.z) and (v.w == u.w)
 
-func `~=`*(v, u: Vec2): bool = (v.x ~= u.x) and (v.y ~= u.y)
-func `~=`*(v, u: Vec3): bool = (v.x ~= u.x) and (v.y ~= u.y) and (v.z ~= u.z)
-func `~=`*(v, u: Vec4): bool = (v.x ~= u.x) and (v.y ~= u.y) and (v.z ~= u.z) and (v.w ~= u.w)
+func `=~`*(v, u: Vec2): bool = (v.x =~ u.x) and (v.y =~ u.y)
+func `=~`*(v, u: Vec3): bool = (v.x =~ u.x) and (v.y =~ u.y) and (v.z =~ u.z)
+func `=~`*(v, u: Vec4): bool = (v.x =~ u.x) and (v.y =~ u.y) and (v.z =~ u.z) and (v.w =~ u.w)
 
 func clamped*(v: Vec2; min, max: SomeNUmber): Vec2 =
     let min = Real min
@@ -186,7 +186,7 @@ func rotated*(v: Vec3; α: Radians; axis: Vec3): Vec3 =
     ## `v = v*cos(α) + (k×v)sin(α) + k*(k∙v)(1 - cos(α))`
     ## where `k` is the axis of rotation
     ## Axis should already be normalized
-    ngm_assert (axis.mag ~= 1.0), "Axis should be normalized before rotation"
+    ngm_assert (axis.mag =~ 1.0), "Axis should be normalized before rotation"
 
     let cosa = cos float32 α
     let sina = sin float32 α
@@ -200,7 +200,7 @@ func reflect*[T: Vec2 | Vec3](v: var T; n: T) = v = reflected(v, n)
 
 func refracted*[T: Vec2 | Vec3](v, n: T; μ: Real): Option[T] =
     ## Normal should already be normlized
-    ngm_assert (n.mag ~= 1), "Normal should be normalized before refraction"
+    ngm_assert (n.mag =~ 1), "Normal should be normalized before refraction"
 
     let dp = n∙v
     let k  = 1 - (μ^2)*(1 - dp^2)

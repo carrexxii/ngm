@@ -2,147 +2,386 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import common, vector
-from std/strutils import join
+import std/[macros, enumerate, options, math], common, vector
+from std/strutils import join, `%`
 
 type
-    Matrix*[N: static int, T: Vector] = array[N, T]
+    Mat2* = array[2, Vec2]
+    Mat3* = array[3, Vec3]
+    Mat4* = array[4, Vec4]
 
-    Mat2x2* = Matrix[2, Vec2]
-    Mat3x3* = Matrix[3, Vec3]
-    Mat4x4* = Matrix[4, Vec4]
+    Transform2D* = array[2, Vec3] ## Missing row is assumed to be [0, 0, 1]
+    Transform3D* = array[3, Vec4] ## Missing row is assumed to be [0, 0, 0, 1]
 
-    Mat2* = Mat2x2
-    Mat3* = Mat3x3
-    Mat4* = Mat4x4
+    AnyMat = Mat2 | Mat3 | Mat4 | Transform2D | Transform3D
 
 const
-    Mat2x2Ident*: Mat2x2 = [[1, 0],
-                            [0, 1]]
-    Mat3x3Ident*: Mat3x3 = [[1, 0, 0],
-                            [0, 1, 0],
-                            [0, 0, 1]]
-    Mat4x4Ident*: Mat4x4 = [[1, 0, 0, 0],
-                            [0, 1, 0, 0],
-                            [0, 0, 1, 0],
-                            [0, 0, 0, 1]]
-
-func `$`*(m: Mat2x2 | Mat3x3 | Mat4x4): string =
-    "[" & (m.join ",\n ") & "]"
-
-converter `Matrix -> ptr Matrix`*(m: Matrix): ptr Matrix = m.addr
-
-#[ -------------------------------------------------------------------- ]#
-
-using
-    mp, m1p, m2p, dstmp: ptr Mat4x4
-    m , m1 , m2 , dstm :     Mat4x4
-    v3p, dstv3p, axisp: ptr Vec3
-    v3 , dstv3 , axis :     Vec3
-    v4p, dstv4p: ptr Vec4
-    v4 , dstv4 :     Vec4
-    cs, cangle: cfloat
-    s ,  angle: float32
-
-{.push header: CGLMDir / "mat4.h".}
-proc mul*(m1p, m2p, dstmp)                 {.importc: "glm_mat4_mul"  .}
-proc scale*(mp; cs)                        {.importc: "glm_mat4_scale".}
-proc inv*(mp, dstmp)                       {.importc: "glm_mat4_inv"  .}
-proc det*(mp): cfloat                      {.importc: "glm_mat4_det"  .}
-proc mulv*(mp; v4p; dstv4p)                {.importc: "glm_mat4_mulv" .}
-proc mulv3*(mp; v3p; last: cfloat; dstv3p) {.importc: "glm_mat4_mulv3".}
-{.pop.}
-
-{.push header: CGLMDir / "affine.h".}
-proc translate_to*(mp; v3p; dstmp) {.importc: "glm_translate_to"  .}
-proc translate*(mp; v3p)           {.importc: "glm_translate"     .}
-proc translate_x*(mp; cs)          {.importc: "glm_translate_x"   .}
-proc translate_y*(mp; cs)          {.importc: "glm_translate_y"   .}
-proc translate_z*(mp; cs)          {.importc: "glm_translate_z"   .}
-proc translate_make*(mp; v3p)      {.importc: "glm_translate_make".}
-
-proc scale_to*(mp; v3p; dstmp) {.importc: "glm_scale_to"  .}
-proc scale_make*(mp; v3p)      {.importc: "glm_scale_make".}
-proc scale*(mp; v3p)           {.importc: "glm_scale"     .}
-proc scale_uni*(mp; cs)        {.importc: "glm_scale_uni" .}
-
-proc rotate_x*(mp; cangle; dstmp)    {.importc: "glm_rotate_x"   .}
-proc rotate_y*(mp; cangle; dstmp)    {.importc: "glm_rotate_y"   .}
-proc rotate_z*(mp; cangle; dstmp)    {.importc: "glm_rotate_z"   .}
-proc rotate_make*(mp; cangle; axisp) {.importc: "glm_rotate_make".}
-proc rotate*(mp; cangle; axisp)      {.importc: "glm_rotate"     .}
-proc spin*(mp; cangle; axisp)        {.importc: "glm_spin"       .}
-{.pop.}
-
-{.push header: CGLMDir / "project.h".}
-proc unprojecti*(v: ptr Vec3; inv_mat: ptr Mat4x4; viewport: ptr Vec4; dst: ptr Vec3) {.importc: "glm_unprojecti".}
-proc unproject*(v: ptr Vec3; mat: ptr Mat4x4; viewport: ptr Vec4; dst: ptr Vec3)      {.importc: "glm_unproject" .}
-proc project*(v: ptr Vec3; mat: ptr Mat4x4; viewport: ptr Vec4; dst: ptr Vec3)        {.importc: "glm_project"   .}
-proc project_z*(v: ptr Vec3; mat: ptr Mat4x4)                                         {.importc: "glm_project_z" .}
-proc pick_matrix*(centre, size: ptr Vec2; viewport: ptr Vec4; dest: ptr Mat4x4)       {.importc: "glm_pickmatrix".}
-{.pop.}
+    Mat2Ident*: Mat2 = [[1, 0],
+                        [0, 1]]
+    Mat3Ident*: Mat3 = [[1, 0, 0],
+                        [0, 1, 0],
+                        [0, 0, 1]]
+    Mat4Ident*: Mat4 = [[1, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 1, 0],
+                        [0, 0, 0, 1]]
+    Transform2DIdent*: Transform2D = [[1, 0, 0],
+                                      [0, 1, 0]]
+    Transform3DIdent*: Transform3D = [[1, 0, 0, 0],
+                                      [0, 1, 0, 0],
+                                      [0, 0, 1, 0]]
 
 {.push inline.}
 
-proc translation*(v3): Mat4x4       = translate_make(result.addr, v3.addr)
-proc rotation*(angle; axis): Mat4x4 = rotate_make(result.addr, angle, axis.addr)
+func `$`*(m: AnyMat): string = "[" & (m.join ",\n ") & "]"
 
-proc `*`*(m1, m2): Mat4x4 = mul(m1.addr, m2.addr, result.addr)
-proc `*`*(m; v4) : Vec4 = mulv(m.addr, v4.addr, result.addr)
-proc `*`*(m; v3) : Vec3 = mulv3(m.addr, v3.addr, 0, result.addr)
-proc `*`*(m; s)  : Mat4x4 = scale_uni(m.addr, s)
+func `[]`*(m: AnyMat; j, i: SomeInteger): Real         = m[j][i]
+func `[]=`*(m: var AnyMat; j, i: SomeInteger; s: Real) = m[j][i] = s
 
-proc `*=`*(m1: var Mat4x4; m2) = m1 = m1 * m2
-proc `*=`*(m : var Mat4x4; s ) = m  = m * s
-proc `*=`*(m : var Mat4x4; v3) = scale(m.addr, v3.addr)
+func mat*(v1, v2: Vec2): Mat2         = [v1, v2]
+func mat*(v1, v2, v3: Vec3): Mat3     = [v1, v2, v3]
+func mat*(v1, v2, v3, v4: Vec4): Mat4 = [v1, v2, v3, v4]
 
-proc `+`*(m; v3): Mat4x4 = translate_to(m.addr, v3.addr, result.addr)
-proc `+=`*(m: var Mat4x4; v3) = translate(m.addr, v3.addr)
+func mat3*(m: Transform2D): Mat3 = [[m[0, 0], m[0, 1], 0],
+                                    [m[1, 0], m[1, 1], 0],
+                                    [m[2, 0], m[2, 1], 1]]
+func mat4*(m: Transform3D): Mat4 = [[m[0, 0], m[0, 1], m[0, 2], 0],
+                                    [m[1, 0], m[1, 1], m[1, 2], 0],
+                                    [m[2, 0], m[2, 1], m[2, 2], 0],
+                                    [m[3, 0], m[3, 1], m[3, 2], 1]]
 
-proc scale*(m: var Mat4x4; v3) = scale(m.addr, v3.addr)
+func tform*(v1, v2: Vec3): Transform2D     = [v1, v2]
+func tform*(v1, v2, v3: Vec4): Transform3D = [v1, v2, v3]
 
-proc translate*(m: var Mat4x4; v3)    = translate(m.addr, v3.addr)
-proc translate_to*(m: var Mat4x4; v3) = translate_to(m.addr, v3.addr, m.addr)
+func matrix_size(T: string): (int, int) =
+    case T
+    of $Mat2       : result = (2, 2)
+    of $Mat3       : result = (3, 3)
+    of $Mat4       : result = (4, 4)
+    of $Transform2D: result = (2, 3)
+    of $Transform3D: result = (3, 4)
+    else:
+        assert false, T
 
-proc rotate*(m: var Mat4x4; angle; axis) = rotate(m.addr, angle, axis.addr)
-proc spin*(m: var Mat4x4; angle; axis)   = spin(m.addr, angle, axis.addr)
+macro expand_alias*(m: AnyMat): untyped =
+    result = new_nim_node nnkStmtList
+    let (w, h) = matrix_size $(get_type_inst m)
+    for n in 0..<w*h:
+        let j = n div w
+        let i = n mod w
+        let name = ident ("$1$2$3" % [repr m, $j, $i])
+        result.add quote do:
+            let `name` = `m`[`j`, `i`]
 
-proc unprojected*(v: Vec3; mat: Mat4x4; viewport: Vec4): Vec3 =
-    unproject v, mat, viewport.addr, result
+macro gen_accessors*(T: typedesc; accs: varargs[string]): untyped =
+    result = new_nim_node nnkStmtList
+    let (w, _) = matrix_size $T
+    for (n, acc) in enumerate accs:
+        let name    = ident $acc
+        let name_eq = ident ($acc & "=")
+        let j = n div w
+        let i = n mod w
+        result.add quote("@@") do:
+            func `@@name`*(m: `@@T`): Real = m[@@j, @@i]
+            func `@@name_eq`*(m: var `@@T`; s: Real) = m[@@j, @@i] = s
 
-proc unproject*(v: var Vec3; mat: Mat4x4; viewport: Vec4) =
-    let cp = v
-    unproject cp, mat, viewport.addr, v
+Mat2.gen_accessors("m00", "m01",
+                   "m10", "m11")
+Mat3.gen_accessors("m00", "m01", "m02",
+                   "m10", "m11", "m12",
+                   "m20", "m21", "m22")
+Mat4.gen_accessors("m00", "m01", "m02", "m03",
+                   "m10", "m11", "m12", "m13",
+                   "m20", "m21", "m22", "m23",
+                   "m30", "m31", "m32", "m33")
+Transform2D.gen_accessors("m00", "m01", "m02",
+                          "m10", "m11", "m12")
+Transform3D.gen_accessors("m00", "m01", "m02", "m03",
+                          "m10", "m11", "m12", "m13",
+                          "m20", "m21", "m22", "m23")
 
-proc inv*(mat: Mat4x4): Mat4x4 = mat.addr.inv result.addr
+#[ -------------------------------------------------------------------- ]#
+
+func `==`*(m1, m2: AnyMat): bool =
+    for i in 0..<m1.len:
+        if m1[i] != m2[i]:
+            return false
+    return true
+func `=~`*(m1, m2: AnyMat): bool =
+    for i in 0..<m1.len:
+        if not (m1[i] =~ m2[i]):
+            return false
+    return true
+
+func `-`*[T: AnyMat](m: T): T =
+    for i in 0..<m.len:
+        result[i] = -m[i]
+
+func `+`*[T: AnyMat](m1, m2: T): T =
+    for i in 0..<m1.len:
+        result[i] = m1[i] + m2[i]
+func `+=`*[T: AnyMat](m1: var T; m2: T) = m1 = m1 + m2
+
+func `-`*[T: AnyMat](m1, m2: T): T =
+    for i in 0..<m1.len:
+        result[i] = m1[i] - m2[i]
+func `-=`*[T: AnyMat](m1: var T; m2: T) = m1 = m1 - m2
+
+func `*`*[T: AnyMat](m: T; s: SomeNumber): T =
+    for i in 0..<m.len:
+        result[i] = m[i] * Real s
+func `*`*[T: AnyMat](s: SomeNumber; m: T): T = m * s
+func `*=`*(m: var AnyMat; s: SomeNumber) = m = m * s
+
+func `/`*[T: AnyMat](m: T; s: SomeNumber): T =
+    for i in 0..<m.len:
+        result[i] = m[i] / Real s
+func `/`*[T: AnyMat](s: SomeNumber; m: T): T = m / s
+func `/=`*(m: var AnyMat; s: SomeNumber) = m = m / s
+
+func scaled*[T: AnyMat](m: T; s: Real): T =
+    for i in 0..<m.len:
+        result[i]    = m[i]
+        result[i, i] = m[i, i] * s
+func scale*[T: AnyMat](m: var T; s: Real) = m = m.scaled s
+
+func transposed*(m: Mat2): Mat2 =
+    expand_alias m
+    [[m00, m10],
+     [m01, m11]]
+
+func transposed*(m: Mat3): Mat3 =
+    expand_alias m
+    [[m00, m10, m20],
+     [m01, m11, m21],
+     [m02, m12, m22]]
+
+func transposed*(m: Mat4): Mat4 =
+    expand_alias m
+    [[m00, m10, m20, m30],
+     [m01, m11, m21, m31],
+     [m02, m12, m22, m32],
+     [m03, m13, m23, m33]]
+
+func transpose*(m: var (Mat2 | Mat3 | Mat4)) = m = transposed m
+
+{.pop.} # inline
+
+#[ -------------------------------------------------------------------- ]#
+
+func determinant*(m: Mat2): Real =
+    expand_alias m
+    m00*m11 - m01*m10
+
+func determinant*(m: Mat3): Real =
+    expand_alias m
+    m00*(m11*m22 - m12*m21) -
+    m01*(m10*m22 - m12*m20) +
+    m02*(m10*m21 - m11*m20)
+
+func determinant*(m: Mat4): Real =
+    expand_alias m
+    let
+        t0 = m22*m33 - m23*m32
+        t1 = m21*m33 - m23*m31
+        t2 = m21*m32 - m22*m31
+        t3 = m20*m32 - m22*m30
+        t4 = m20*m33 - m23*m30
+        t5 = m20*m31 - m21*m30
+    m00*(m11*t0 - m12*t1 + m13*t2) -
+    m01*(m10*t0 - m12*t4 + m13*t3) +
+    m02*(m10*t1 - m11*t4 + m13*t5) -
+    m03*(m10*t2 - m11*t3 + m12*t5)
+
+func det*(m: AnyMat): Real = determinant m
+
+func inv*(m: Mat2): Option[Mat2] =
+    let det = det m
+    if det == 0:
+        return none Mat2
+
+    expand_alias m
+    some (1 / det)*[[ m11, -m01],
+                    [-m10,  m00]]
+
+func inv*(m: Mat3): Option[Mat3] =
+    let det = det m
+    if det == 0:
+        return none Mat3
+
+    expand_alias m
+    some (1 / det)*[[m11*m22 - m12*m21, m02*m21 - m01*m22, m01*m12 - m02*m11],
+                    [m12*m20 - m10*m22, m00*m22 - m02*m20, m02*m10 - m00*m12],
+                    [m10*m21 - m11*m20, m01*m20 - m00*m21, m00*m11 - m01*m10]]
+
+func inv*(m: Mat4): Option[Mat4] =
+    let det = det m
+    if det == 0:
+        return none Mat4
+
+    expand_alias m
+    let
+        t00 = m00*m11 - m01*m10
+        t01 = m00*m12 - m02*m10
+        t02 = m00*m13 - m03*m10
+        t03 = m01*m12 - m02*m11
+        t04 = m01*m13 - m03*m11
+        t05 = m02*m13 - m03*m12
+        t06 = m20*m31 - m21*m30
+        t07 = m20*m32 - m22*m30
+        t08 = m20*m33 - m23*m30
+        t09 = m21*m32 - m22*m31
+        t10 = m21*m33 - m23*m31
+        t11 = m22*m33 - m23*m32
+
+    let det_inv = 1 / det
+    some det_inv*[[ m11*t11 - m12*t10 + m13*t09, -m01*t11 + m02*t10 - m03*t09,  m31*t05 - m32*t04 + m33*t03, -m21*t05 + m22*t04 - m23*t03],
+                  [-m10*t11 + m12*t08 - m13*t07,  m00*t11 - m02*t08 + m03*t07, -m30*t05 + m32*t02 - m33*t01,  m20*t05 - m22*t02 + m23*t01],
+                  [ m10*t10 - m11*t08 + m13*t06, -m00*t10 + m01*t08 - m03*t06,  m30*t04 - m31*t02 + m33*t00, -m20*t04 + m21*t02 - m23*t00],
+                  [-m10*t09 + m11*t07 - m12*t06,  m00*t09 - m01*t07 + m02*t06, -m30*t03 + m31*t01 - m32*t00,  m20*t03 - m21*t01 + m22*t00]]
+
+func `*`*(a, b: Mat2): Mat2 =
+    expand_alias a
+    expand_alias b
+    [[a00*b00 + a10*b01, a01*b00 + a11*b01],
+     [a00*b10 + a10*b11, a01*b10 + a11*b11]]
+
+func `*`*(a, b: Mat3): Mat3 =
+    expand_alias a
+    expand_alias b
+    [[a00*b00 + a10*b01 + a20*b02, a01*b00 + a11*b01 + a21*b02, a02*b00 + a12*b01 + a22*b02],
+     [a00*b10 + a10*b11 + a20*b12, a01*b10 + a11*b11 + a21*b12, a02*b10 + a12*b11 + a22*b12],
+     [a00*b20 + a10*b21 + a20*b22, a01*b20 + a11*b21 + a21*b22, a02*b20 + a12*b21 + a22*b22]]
+
+func `*`*(a, b: Mat4): Mat4 =
+    expand_alias a
+    expand_alias b
+    [[a00*b00 + a10*b01 + a20*b02 + a30*b03, a01*b00 + a11*b01 + a21*b02 + a31*b03, a02*b00 + a12*b01 + a22*b02 + a32*b03, a03*b00 + a13*b01 + a23*b02 + a33*b03],
+     [a00*b10 + a10*b11 + a20*b12 + a30*b13, a01*b10 + a11*b11 + a21*b12 + a31*b13, a02*b10 + a12*b11 + a22*b12 + a32*b13, a03*b10 + a13*b11 + a23*b12 + a33*b13],
+     [a00*b20 + a10*b21 + a20*b22 + a30*b23, a01*b20 + a11*b21 + a21*b22 + a31*b23, a02*b20 + a12*b21 + a22*b22 + a32*b23, a03*b20 + a13*b21 + a23*b22 + a33*b23],
+     [a00*b30 + a10*b31 + a20*b32 + a30*b33, a01*b30 + a11*b31 + a21*b32 + a31*b33, a02*b30 + a12*b31 + a22*b32 + a32*b33, a03*b30 + a13*b31 + a23*b32 + a33*b33]]
+
+func `*`*(m: Mat2; v: Vec2): Vec2 =
+    expand_alias m
+    [m00*v.x + m10*v.y,
+     m01*v.x + m11*v.y]
+
+func `*`*(m: Mat3; v: Vec3): Vec3 =
+    expand_alias m
+    [m00*v.x + m10*v.y + m20*v.z,
+     m01*v.x + m11*v.y + m21*v.z,
+     m02*v.x + m12*v.y + m22*v.z]
+
+func `*`*(m: Mat4; v: Vec4): Vec4 =
+    expand_alias m
+    [m00*v.x + m10*v.y + m20*v.z + m30*v.w,
+     m01*v.x + m11*v.y + m21*v.z + m31*v.w,
+     m02*v.x + m12*v.y + m22*v.z + m32*v.w,
+     m03*v.x + m13*v.y + m23*v.z + m33*v.w]
+
+func `*`*(m: Mat4; v: Vec3): Vec3 =
+    expand_alias m
+    [m00*v.x + m10*v.y + m20*v.z,
+     m01*v.x + m11*v.y + m21*v.z,
+     m02*v.x + m12*v.y + m22*v.z]
+
+#[ -------------------------------------------------------------------- ]#
+
+{.push inline.}
+
+func translation*(v: Vec2): Transform2D =
+    [[1, 0, v.x],
+     [0, 1, v.y]]
+
+func translation*(v: Vec3): Transform3D =
+    [[1, 0, 0, v.x],
+     [0, 1, 0, v.y],
+     [0, 0, 1, v.z]]
+
+func translate*(m: var Mat3; v: Vec2) =
+    expand_alias m
+    m.m02 = m00*v.x + m10*v.y + m02
+    m.m12 = m01*v.x + m11*v.y + m12
+
+func translate*(m: var Mat4; v: Vec3) =
+    expand_alias m
+    m.m03 = m00*v.x + m10*v.y + m20*v.z + m03
+    m.m13 = m01*v.x + m11*v.y + m21*v.z + m13
+    m.m23 = m02*v.x + m12*v.y + m22*v.z + m23
+
+func translated*(m: Mat3; v: Vec2): Mat3 = result = m; result.translate v
+func translated*(m: Mat4; v: Vec3): Mat4 = result = m; result.translate v
+
+func dilation*(v: Vec2): Transform2D =
+    [[v.x, 0  , 0],
+     [0  , v.y, 0]]
+
+func dilation*(v: Vec3): Transform3D =
+    [[v.x, 0  , 0  , 0],
+     [0  , v.y, 0  , 0],
+     [0  , 0  , v.z, 0]]
+
+func scale*(m: var Mat3; v: Vec2) =
+    expand_alias m
+    m.m00 = m00*v.x
+    m.m01 = m01*v.x
+    m.m02 = m02*v.x
+
+    m.m10 = m10*v.y
+    m.m11 = m11*v.y
+    m.m12 = m12*v.y
+
+func scale*(m: var Mat4; v: Vec3) =
+    expand_alias m
+    m.m00 = m00*v.x
+    m.m01 = m01*v.x
+    m.m02 = m02*v.x
+    m.m03 = m03*v.x
+
+    m.m10 = m10*v.y
+    m.m11 = m11*v.y
+    m.m12 = m12*v.y
+    m.m13 = m13*v.y
+
+    m.m20 = m20*v.z
+    m.m21 = m21*v.z
+    m.m22 = m22*v.z
+    m.m23 = m23*v.z
+
+func scaled*(m: Mat3; v: Vec2): Mat3 = result = m; result.scale v
+func scaled*(m: Mat4; v: Vec3): Mat4 = result = m; result.scale v
+
+func rotation*(α: Real; v: Vec3): Transform3D =
+    ## CCW rotation
+    ## Axis vector needs to be normalized before rotation
+    ngm_assert (v.mag =~ 1), "Axis vector should be normalized before rotation"
+
+    let c  = cos α
+    let s  = sin α
+    let ci = 1 - c
+    [[v.x*v.x*ci + c    , v.x*v.y*ci - v.z*s, v.x*v.z*ci + v.y*s, 0],
+     [v.y*v.x*ci + v.z*s, v.y*v.y*ci + c    , v.y*v.z*ci - v.x*s, 0],
+     [v.z*v.x*ci - v.y*s, v.z*v.y*ci + v.x*s, v.z*v.z*ci + c    , 0]]
+
+func x_rotation*(α: Real): Transform3D =
+    let c = cos α
+    let s = sin α
+    [[1, 0,  0, 0],
+     [0, c, -s, 0],
+     [0, s,  c, 0]]
+
+func y_rotation*(α: Real): Transform3D =
+    let c = cos α
+    let s = sin α
+    [[ c, 0, s, 0],
+     [ 0, 1, 0, 0],
+     [-s, 0, c, 0]]
+
+func z_rotation*(α: Real): Transform3D =
+    let c = cos α
+    let s = sin α
+    [[c, -s, 0, 0],
+     [s,  c, 0, 0],
+     [0,  0, 1, 0]]
 
 {.pop.}
-
-# TODO
-   # CGLM_INLINE void  glm_mat4_ucopy(mat4 mat, mat4 dest);
-   # CGLM_INLINE void  glm_mat4_copy(mat4 mat, mat4 dest);
-   # CGLM_INLINE void  glm_mat4_identity(mat4 mat);
-   # CGLM_INLINE void  glm_mat4_identity_array(mat4 * restrict mat, size_t count);
-   # CGLM_INLINE void  glm_mat4_zero(mat4 mat);
-   # CGLM_INLINE void  glm_mat4_pick3(mat4 mat, mat3 dest);
-   # CGLM_INLINE void  glm_mat4_pick3t(mat4 mat, mat3 dest);
-   # CGLM_INLINE void  glm_mat4_ins3(mat3 mat, mat4 dest);
-   # CGLM_INLINE void  glm_mat4_mulN(mat4 *matrices[], int len, mat4 dest);
-   # CGLM_INLINE float glm_mat4_trace(mat4 m);
-   # CGLM_INLINE float glm_mat4_trace3(mat4 m);
-   # CGLM_INLINE void  glm_mat4_quat(mat4 m, versor dest) ;
-   # CGLM_INLINE void  glm_mat4_transpose_to(mat4 m, mat4 dest);
-   # CGLM_INLINE void  glm_mat4_transpose(mat4 m);
-   # CGLM_INLINE void  glm_mat4_scale_p(mat4 m, float s);
-   # CGLM_INLINE void  glm_mat4_inv_fast(mat4 mat, mat4 dest);
-   # CGLM_INLINE void  glm_mat4_swap_col(mat4 mat, int col1, int col2);
-   # CGLM_INLINE void  glm_mat4_swap_row(mat4 mat, int row1, int row2);
-   # CGLM_INLINE float glm_mat4_rmc(vec4 r, mat4 m, vec4 c);
-   # CGLM_INLINE void  glm_mat4_make(float * restrict src, mat4 dest);
-
-   # CGLM_INLINE void glm_rotate_at(mat4 m, vec3 pivot, float angle, vec3 axis);
-   # CGLM_INLINE void glm_rotate_atm(mat4 m, vec3 pivot, float angle, vec3 axis);
-   # CGLM_INLINE void glm_decompose_scalev(mat4 m, vec3 s);
-   # CGLM_INLINE bool glm_uniscaled(mat4 m);
-   # CGLM_INLINE void glm_decompose_rs(mat4 m, mat4 r, vec3 s);
-   # CGLM_INLINE void glm_decompose(mat4 m, vec4 t, mat4 r, vec3 s);
