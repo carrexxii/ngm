@@ -14,4 +14,8 @@ const DefaultMouseSensitivity* = 0.0005
 
 type Real* = float32
 
-func `~=`*(a, b: Real): bool = almost_equal(a, b)
+template ngm_assert*(cond, body) =
+    when not defined NgmNoAssert:
+        assert cond, body
+
+func `=~`*(a, b: Real): bool = almost_equal(a, b)

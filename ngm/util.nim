@@ -1,15 +1,19 @@
-import common, borrows
+import std/math, common, borrows
 from std/strutils import parse_float
 
 type
-    Degrees* = distinct float32
-    Radians* = distinct float32
+    Degrees* = distinct Real
+    Radians* = distinct Real
 
 proc `'deg`*(x: string): Degrees {.compileTime.} = Degrees (parse_float x)
 proc `'rad`*(x: string): Radians {.compileTime.} = Radians (parse_float x)
 
 Degrees.borrow_numeric float32
 Radians.borrow_numeric float32
+
+func sin*(α: Radians): Real = sin Real α
+func cos*(α: Radians): Real = cos Real α
+func tan*(α: Radians): Real = tan Real α
 
 {.push header: CGLMDir / "util.h".}
 func glm_eq*(a, b: float32): bool    {.importc: "glm_eq" .}

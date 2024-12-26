@@ -151,8 +151,7 @@ func `∙`*(v, u: AnyVec): Real = dot v, u
 
 func norm2*[T: AnyVec](v: T): Real = v∙v
 func norm*[T: AnyVec](v: T): Real  = sqrt(norm2 v)
-func mag*(v: Vec2 | Vec3): Real   = norm v
-func len*(v: Vec2 | Vec3): Real   = norm v
+func mag*(v: AnyVec): Real         = norm v
 
 func normalized*[T: AnyVec](v: T): T =
     let mag = mag v

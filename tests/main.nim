@@ -10,3 +10,6 @@ suite "Vectors":
 
 suite "Matrices":
     include matrix
+
+suite "Quaternions":
+    include quat

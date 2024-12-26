@@ -50,6 +50,8 @@ func mat4*(m: Transform3D): Mat4 = [[m[0, 0], m[0, 1], m[0, 2], 0],
                                     [m[2, 0], m[2, 1], m[2, 2], 0],
                                     [m[3, 0], m[3, 1], m[3, 2], 1]]
 
+func mat3*(m: Mat4 | Transform3D): Mat3 = [m[0].xyz, m[1].xyz, m[2].xyz]
+
 func tform*(v1, v2: Vec3): Transform2D     = [v1, v2]
 func tform*(v1, v2, v3: Vec4): Transform3D = [v1, v2, v3]
 
@@ -58,8 +60,8 @@ func matrix_size(T: string): (int, int) =
     of $Mat2       : result = (2, 2)
     of $Mat3       : result = (3, 3)
     of $Mat4       : result = (4, 4)
-    of $Transform2D: result = (2, 3)
-    of $Transform3D: result = (3, 4)
+    of $Transform2D: result = (3, 2)
+    of $Transform3D: result = (4, 3)
     else:
         assert false, T
 
@@ -195,7 +197,7 @@ func determinant*(m: Mat4): Real =
 
 func det*(m: AnyMat): Real = determinant m
 
-func inv*(m: Mat2): Option[Mat2] =
+func inverse*(m: Mat2): Option[Mat2] =
     let det = det m
     if det == 0:
         return none Mat2
@@ -204,7 +206,7 @@ func inv*(m: Mat2): Option[Mat2] =
     some (1 / det)*[[ m11, -m01],
                     [-m10,  m00]]
 
-func inv*(m: Mat3): Option[Mat3] =
+func inverse*(m: Mat3): Option[Mat3] =
     let det = det m
     if det == 0:
         return none Mat3
@@ -214,7 +216,7 @@ func inv*(m: Mat3): Option[Mat3] =
                     [m12*m20 - m10*m22, m00*m22 - m02*m20, m02*m10 - m00*m12],
                     [m10*m21 - m11*m20, m01*m20 - m00*m21, m00*m11 - m01*m10]]
 
-func inv*(m: Mat4): Option[Mat4] =
+func inverse*(m: Mat4): Option[Mat4] =
     let det = det m
     if det == 0:
         return none Mat4
@@ -240,6 +242,10 @@ func inv*(m: Mat4): Option[Mat4] =
                   [ m10*t10 - m11*t08 + m13*t06, -m00*t10 + m01*t08 - m03*t06,  m30*t04 - m31*t02 + m33*t00, -m20*t04 + m21*t02 - m23*t00],
                   [-m10*t09 + m11*t07 - m12*t06,  m00*t09 - m01*t07 + m02*t06, -m30*t03 + m31*t01 - m32*t00,  m20*t03 - m21*t01 + m22*t00]]
 
+func inv*(m: Mat2): Option[Mat2] = inverse m
+func inv*(m: Mat3): Option[Mat3] = inverse m
+func inv*(m: Mat4): Option[Mat4] = inverse m
+
 func `*`*(a, b: Mat2): Mat2 =
     expand_alias a
     expand_alias b
@@ -260,6 +266,19 @@ func `*`*(a, b: Mat4): Mat4 =
      [a00*b10 + a10*b11 + a20*b12 + a30*b13, a01*b10 + a11*b11 + a21*b12 + a31*b13, a02*b10 + a12*b11 + a22*b12 + a32*b13, a03*b10 + a13*b11 + a23*b12 + a33*b13],
      [a00*b20 + a10*b21 + a20*b22 + a30*b23, a01*b20 + a11*b21 + a21*b22 + a31*b23, a02*b20 + a12*b21 + a22*b22 + a32*b23, a03*b20 + a13*b21 + a23*b22 + a33*b23],
      [a00*b30 + a10*b31 + a20*b32 + a30*b33, a01*b30 + a11*b31 + a21*b32 + a31*b33, a02*b30 + a12*b31 + a22*b32 + a32*b33, a03*b30 + a13*b31 + a23*b32 + a33*b33]]
+
+func `*`*(a, b: Transform2D): Transform2D =
+    expand_alias a
+    expand_alias b
+    [[a00*b00 + a10*b01, a01*b00 + a11*b01, a02*b00 + a12*b01 + b02],
+     [a00*b10 + a10*b11, a01*b10 + a11*b11, a02*b10 + a12*b11 + b12]]
+
+func `*`*(a, b: Transform3D): Transform3D =
+    expand_alias a
+    expand_alias b
+    [[a00*b00 + a10*b01 + a20*b02, a01*b00 + a11*b01 + a21*b02, a02*b00 + a12*b01 + a22*b02, a03*b00 + a13*b01 + a23*b02 + b03],
+     [a00*b10 + a10*b11 + a20*b12, a01*b10 + a11*b11 + a21*b12, a02*b10 + a12*b11 + a22*b12, a03*b10 + a13*b11 + a23*b12 + b13],
+     [a00*b20 + a10*b21 + a20*b22, a01*b20 + a11*b21 + a21*b22, a02*b20 + a12*b21 + a22*b22, a03*b20 + a13*b21 + a23*b22 + b23]]
 
 func `*`*(m: Mat2; v: Vec2): Vec2 =
     expand_alias m

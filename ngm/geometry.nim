@@ -2,7 +2,7 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import common, util, vector
+import common, util, vector, matrix
 
 type
     Point2D* = object
@@ -27,14 +27,17 @@ func point*(v: Vec3): Point3D = Point3D(x: v.x, y: v.y, z: v.z)
 func vec*(p: Point2D): Vec2 = vec(p.x, p.y)
 func vec*(p: Point3D): Vec3 = vec(p.x, p.y, p.z)
 
+func vec3*(p: Point2D): Vec3 = vec(p.x, p.y, 1.0)
+func vec4*(p: Point3D): Vec4 = vec(p.x, p.y, p.z, 1.0)
+
 func arr*(p: Point2D): array[2, Real] = [p.x, p.y]
 func arr*(p: Point3D): array[3, Real] = [p.x, p.y, p.z]
 
 func `==`*(p1, p2: Point2D): bool = (p1.x == p2.x) and (p1.y == p2.y)
 func `==`*(p1, p2: Point3D): bool = (p1.x == p2.x) and (p1.y == p2.y) and (p1.z == p2.z)
 
-func `~=`*(p1, p2: Point2D): bool = (p1.x ~= p2.x) and (p1.y ~= p2.y)
-func `~=`*(p1, p2: Point3D): bool = (p1.x ~= p2.x) and (p1.y ~= p2.y) and (p1.z ~= p2.z)
+func `=~`*(p1, p2: Point2D): bool = (p1.x =~ p2.x) and (p1.y =~ p2.y)
+func `=~`*(p1, p2: Point3D): bool = (p1.x =~ p2.x) and (p1.y =~ p2.y) and (p1.z =~ p2.z)
 
 func `-`*(p: Point2D): Point2D = point(-p.x, -p.y)
 func `-`*(p: Point3D): Point3D = point(-p.x, -p.y, -p.z)
@@ -55,6 +58,16 @@ func `*`*(p: Point2D; s: Real): Point2D = s*p
 func `*`*(p: Point3D; s: Real): Point3D = s*p
 func `*=`*(p: var Point2D; s: Real) = p = s*p
 func `*=`*(p: var Point3D; s: Real) = p = s*p
+
+func `*`*(m: Mat3; p: Point2D): Point2D =
+    expand_alias m
+    point(m00*p.x + m10*p.y + m20,
+          m01*p.x + m11*p.y + m21)
+func `*`*(m: Mat4; p: Point3D): Point3D =
+    expand_alias m
+    point(m00*p.x + m10*p.y + m20*p.z + m30,
+          m01*p.x + m11*p.y + m21*p.z + m31,
+          m02*p.x + m12*p.y + m22*p.z + m32)
 
 func centre*[T: Point2D | Point3D](p1, p2: T): T = (p1 + vec(p2))*0.5
 
