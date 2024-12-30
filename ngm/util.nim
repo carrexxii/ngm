@@ -1,23 +1,13 @@
 import std/math, common, borrows
 from std/strutils import parse_float
 
-func lerp*(a, b, t: Real): Real =
-    a + t*(b - a)
-
-func step*(a: Real; r = (SomeNumber 0)..(SomeNumber 1)): Real =
-    if a < Real r.b:
-        Real r.a
-    else:
-        Real r.b
-
-#[ -------------------------------------------------------------------- ]#
-
 type
     Degrees* = distinct Real
     Radians* = distinct Real
 
-const π* = Radians Pi
-
+const π*   = Radians Pi
+const π⋅2* = Radians Pi*2
+const π÷2* = Radians Pi/2
 
 proc `'deg`*(x: string): Degrees {.compileTime.} = Degrees parse_float x
 proc `'°`*(x: string): Degrees   {.compileTime.} = Degrees parse_float x
@@ -47,8 +37,5 @@ func deg*(a: Radians): Degrees = degrees a
 func sin*(α: Radians): Real = sin Real α
 func cos*(α: Radians): Real = cos Real α
 func tan*(α: Radians): Real = tan Real α
-
-func lerp*(a, b: Radians; t: Real): Radians {.borrow.}
-func lerp*(a, b: Degrees; t: Real): Degrees {.borrow.}
 
 {.pop.}
