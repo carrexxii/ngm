@@ -12,13 +12,16 @@ const QuatIdent* = Quat(x: 0, y: 0, z: 0, w: 1)
 
 {.push inline.}
 
+converter `array -> Quat`*(arr: array[4, Real]): Quat = Quat(x: arr[0], y: arr[1], z: arr[2], w: arr[3])
+
 func `$`*(q: Quat): string  = &"({q.x}, {q.y}, {q.z}, {q.w})"
 func repr*(q: Quat): string = &"Quat (x: {q.x}, y: {q.y}, z: {q.z}, w: {q.w})"
 
-func quat*(x: SomeNumber, y: SomeNumber, z: SomeNumber, w: SomeNumber): Quat =
-    Quat(x: Real x, y: Real y, z: Real z, w: Real w)
-func quat*(v: Vec4): Quat =
-    quat v.x, v.y, v.z, v.w
+func unpack*(q: Quat): (Real, Real, Real, Real) = (q.x, q.y, q.z, q.w)
+
+func quat*(x, y, z, w: Real): Quat = Quat(x: x, y: y, z: z, w: w)
+func quat*(v: Vec4): Quat          = quat v.x, v.y, v.z, v.w
+
 func quat*(v, u: Vec3): Quat =
     ngm_assert (v.mag =~ 1 and u.mag =~ 1), "Vectors to calculate quaternion from should be normalized"
 
@@ -35,6 +38,7 @@ func quat*(v, u: Vec3): Quat =
                 axis.y*sin_half,
                 axis.z*sin_half,
                 cos_half)
+
 func quat*(v: Vec3; α: Radians): Quat =
     let s = sin(α/2)
     quat v.x*s, v.y*s, v.z*s, cos(α/2)
@@ -46,19 +50,20 @@ func mat*(q: Quat; pos = vec3()): Transform3D =
     let y = q.y
     let z = q.z
     let w = q.w
-    [[1 - 2*(y*y + z*z),     2*(x*y - z*w),     2*(x*z + y*w), pos.x],
-     [    2*(x*y + z*w), 1 - 2*(x*x + z*z),     2*(y*z - x*w), pos.y],
-     [    2*(x*z - y*w),     2*(y*z + x*w), 1 - 2*(x*x + y*y), pos.z]]
+    [[1 - 2*(y*y + z*z),     2*(x*y - z*w),     2*(x*z + y*w)],
+     [    2*(x*y + z*w), 1 - 2*(x*x + z*z),     2*(y*z - x*w)],
+     [    2*(x*z - y*w),     2*(y*z + x*w), 1 - 2*(x*x + y*y)],
+     [pos.x            , pos.y            , pos.z            ]]
 
 func mat3*(q: Quat): Mat3 =
     mat3 mat q
 
 func mat4*(q: Quat): Mat4 =
     let m = mat q
-    result[0] = m[0]
-    result[1] = m[1]
-    result[2] = m[2]
-    result[3] = vec(0, 0, 0, 1)
+    [[m[0,0], m[0,1], m[0,2], 0],
+     [m[1,0], m[1,1], m[1,2], 0],
+     [m[2,0], m[2,1], m[2,2], 0],
+     [0     , 0     , 0     , 1]]
 
 #[ -------------------------------------------------------------------- ]#
 
@@ -76,10 +81,8 @@ func mag*(q: Quat): Real   = mag   cast[Vec4](q)
 func normalized*(q: Quat): Quat = quat normalized cast[Vec4](q)
 func normalize*(q: var Quat)    = q = normalized q
 
-func versor*(x: SomeNumber, y: SomeNumber, z: SomeNumber, w: SomeNumber): Quat =
-    normalized Quat(x: Real x, y: Real y, z: Real z, w: Real w)
-func versor*(q: Quat | Vec4): Quat =
-    normalized q
+func versor*(x, y, z, w: Real): Quat = normalized Quat(x: x, y: y, z: z, w: w)
+func versor*(q: Quat | Vec4): Quat   = normalized q
 
 func conjugate*(q: Quat): Quat = quat -q.x, -q.y, -q.z, q.w
 func conj*(q: Quat): Quat      = conjugate q
@@ -90,7 +93,7 @@ func `/`*(q: Quat; s: Real): Quat = quat (cast[Vec4](q) / s)
 
 func inverse*(q: Quat): Quat =
     let mag = q.mag
-    (conj q) / (mag*mag)
+    q.conj / mag^2
 func inv*(q: Quat): Quat = inverse q
 
 func `+`*(q, p: Quat): Quat = quat (cast[Vec4](q) + cast[Vec4](p))
@@ -100,6 +103,7 @@ func `+=`*(q: var Quat; p: Quat) = q = q + p
 func `-=`*(q: var Quat; p: Quat) = q = q - p
 
 func `*`*(q: Quat; s: Real): Quat = quat (cast[Vec4](q) * s)
+func `*`*(s: Real; q: Quat): Quat = q*s
 func `*`*(q, p: Quat): Quat =
     quat q.w*p.x + q.x*p.w + q.y*p.z - q.z*p.y,
          q.w*p.y - q.x*p.z + q.y*p.w + q.z*p.x,
@@ -107,6 +111,11 @@ func `*`*(q, p: Quat): Quat =
          q.w*p.w - q.x*p.x - q.y*p.y - q.z*p.z
 
 func `/`*(q, p: Quat): Quat = q * inv p
+
+func `*=`*(q: var Quat; s: Real) = q = q*s
+func `*=`*(q: var Quat; p: Quat) = q = q*p
+func `/=`*(q: var Quat; p: Quat) = q = q/p
+func `/=`*(q: var Quat; s: Real) = q = q/s
 
 func dot*(q, p: Quat): Real = cast[Vec4](q) ∙ cast[Vec4](p)
 func `∙`*(q, p: Quat): Real = q.dot p

@@ -39,3 +39,6 @@ suite "Matrices":
 
 suite "Quaternions":
     include quat
+
+suite "Dual Quaternions":
+    include dquat

@@ -10,8 +10,8 @@ type
     Mat3* = array[3, Vec3]
     Mat4* = array[4, Vec4]
 
-    Transform2D* = array[2, Vec3] ## Missing row is assumed to be [0, 0, 1]
-    Transform3D* = array[3, Vec4] ## Missing row is assumed to be [0, 0, 0, 1]
+    Transform2D* = array[3, Vec2] ## Missing row is assumed to be [0, 0, 1]
+    Transform3D* = array[4, Vec3] ## Missing row is assumed to be [0, 0, 0, 1]
 
     AnyMat = Mat2 | Mat3 | Mat4 | Transform2D | Transform3D
 
@@ -25,11 +25,13 @@ const
                         [0, 1, 0, 0],
                         [0, 0, 1, 0],
                         [0, 0, 0, 1]]
-    Transform2DIdent*: Transform2D = [[1, 0, 0],
-                                      [0, 1, 0]]
-    Transform3DIdent*: Transform3D = [[1, 0, 0, 0],
-                                      [0, 1, 0, 0],
-                                      [0, 0, 1, 0]]
+    Transform2DIdent*: Transform2D = [[1, 0],
+                                      [0, 1],
+                                      [0, 0]]
+    Transform3DIdent*: Transform3D = [[1, 0, 0],
+                                      [0, 1, 0],
+                                      [0, 0, 1],
+                                      [0, 0, 0]]
 
 {.push inline.}
 
@@ -52,16 +54,16 @@ func mat4*(m: Transform3D): Mat4 = [[m[0, 0], m[0, 1], m[0, 2], 0],
 
 func mat3*(m: Mat4 | Transform3D): Mat3 = [m[0].xyz, m[1].xyz, m[2].xyz]
 
-func tform*(v1, v2: Vec3): Transform2D     = [v1, v2]
-func tform*(v1, v2, v3: Vec4): Transform3D = [v1, v2, v3]
+func tform*(v1, v2, v3: Vec2): Transform2D     = [v1, v2, v3]
+func tform*(v1, v2, v3, v4: Vec3): Transform3D = [v1, v2, v3, v4]
 
 func matrix_size(T: string): (int, int) =
     case T
     of $Mat2       : result = (2, 2)
     of $Mat3       : result = (3, 3)
     of $Mat4       : result = (4, 4)
-    of $Transform2D: result = (3, 2)
-    of $Transform3D: result = (4, 3)
+    of $Transform2D: result = (2, 3)
+    of $Transform3D: result = (3, 4)
     else:
         assert false, T
 
@@ -96,11 +98,13 @@ Mat4.gen_accessors("m00", "m01", "m02", "m03",
                    "m10", "m11", "m12", "m13",
                    "m20", "m21", "m22", "m23",
                    "m30", "m31", "m32", "m33")
-Transform2D.gen_accessors("m00", "m01", "m02",
-                          "m10", "m11", "m12")
-Transform3D.gen_accessors("m00", "m01", "m02", "m03",
-                          "m10", "m11", "m12", "m13",
-                          "m20", "m21", "m22", "m23")
+Transform2D.gen_accessors("m00", "m01",
+                          "m10", "m11",
+                          "m20", "m21")
+Transform3D.gen_accessors("m00", "m01", "m02",
+                          "m10", "m11", "m12",
+                          "m20", "m21", "m22",
+                          "m30", "m31", "m32")
 
 #[ -------------------------------------------------------------------- ]#
 
@@ -270,15 +274,17 @@ func `*`*(a, b: Mat4): Mat4 =
 func `*`*(a, b: Transform2D): Transform2D =
     expand_alias a
     expand_alias b
-    [[a00*b00 + a10*b01, a01*b00 + a11*b01, a02*b00 + a12*b01 + b02],
-     [a00*b10 + a10*b11, a01*b10 + a11*b11, a02*b10 + a12*b11 + b12]]
+    [[a00*b00 + a10*b01      , a01*b00 + a11*b01      ],
+     [a00*b10 + a10*b11      , a01*b10 + a11*b11      ],
+     [a00*b20 + a10*b21 + a20, a01*b20 + a11*b21 + a21]]
 
 func `*`*(a, b: Transform3D): Transform3D =
     expand_alias a
     expand_alias b
-    [[a00*b00 + a10*b01 + a20*b02, a01*b00 + a11*b01 + a21*b02, a02*b00 + a12*b01 + a22*b02, a03*b00 + a13*b01 + a23*b02 + b03],
-     [a00*b10 + a10*b11 + a20*b12, a01*b10 + a11*b11 + a21*b12, a02*b10 + a12*b11 + a22*b12, a03*b10 + a13*b11 + a23*b12 + b13],
-     [a00*b20 + a10*b21 + a20*b22, a01*b20 + a11*b21 + a21*b22, a02*b20 + a12*b21 + a22*b22, a03*b20 + a13*b21 + a23*b22 + b23]]
+    [[a00*b00 + a10*b01 + a20*b02      , a01*b00 + a11*b01 + a21*b02      , a02*b00 + a12*b01 + a22*b02      ],
+     [a00*b10 + a10*b11 + a20*b12      , a01*b10 + a11*b11 + a21*b12      , a02*b10 + a12*b11 + a22*b12      ],
+     [a00*b20 + a10*b21 + a20*b22      , a01*b20 + a11*b21 + a21*b22      , a02*b20 + a12*b21 + a22*b22      ],
+     [a00*b30 + a10*b31 + a20*b32 + a30, a01*b30 + a11*b31 + a21*b32 + a31, a02*b30 + a12*b31 + a22*b32 + a32]]
 
 func `*`*(m: Mat2; v: Vec2): Vec2 =
     expand_alias m
@@ -309,13 +315,15 @@ func `*`*(m: Mat4; v: Vec3): Vec3 =
 {.push inline.}
 
 func translation*(v: Vec2): Transform2D =
-    [[1, 0, v.x],
-     [0, 1, v.y]]
+    [[1.0, 0.0],
+     [0.0, 1.0],
+     [v.x, v.y]]
 
 func translation*(v: Vec3): Transform3D =
-    [[1, 0, 0, v.x],
-     [0, 1, 0, v.y],
-     [0, 0, 1, v.z]]
+    [[1.0, 0.0, 0.0],
+     [0.0, 1.0, 0.0],
+     [0.0, 0.0, 1.0],
+     [v.x, v.y, v.z]]
 
 func translate*(m: var Mat3; v: Vec2) =
     expand_alias m
@@ -332,13 +340,15 @@ func translated*(m: Mat3; v: Vec2): Mat3 = result = m; result.translate v
 func translated*(m: Mat4; v: Vec3): Mat4 = result = m; result.translate v
 
 func dilation*(v: Vec2): Transform2D =
-    [[v.x, 0  , 0],
-     [0  , v.y, 0]]
+    [[v.x, 0.0],
+     [0.0, v.y],
+     [0.0, 0.0]]
 
 func dilation*(v: Vec3): Transform3D =
-    [[v.x, 0  , 0  , 0],
-     [0  , v.y, 0  , 0],
-     [0  , 0  , v.z, 0]]
+    [[v.x, 0.0, 0.0],
+     [0.0, v.y, 0.0],
+     [0.0, 0.0, v.z],
+     [0.0, 0.0, 0.0]]
 
 func scale*(m: var Mat3; v: Vec2) =
     expand_alias m
@@ -378,29 +388,33 @@ func rotation*(α: Real; v: Vec3): Transform3D =
     let c  = cos α
     let s  = sin α
     let ci = 1 - c
-    [[v.x*v.x*ci + c    , v.x*v.y*ci - v.z*s, v.x*v.z*ci + v.y*s, 0],
-     [v.y*v.x*ci + v.z*s, v.y*v.y*ci + c    , v.y*v.z*ci - v.x*s, 0],
-     [v.z*v.x*ci - v.y*s, v.z*v.y*ci + v.x*s, v.z*v.z*ci + c    , 0]]
+    [[v.x*v.x*ci + c    , v.x*v.y*ci - v.z*s, v.x*v.z*ci + v.y*s],
+     [v.y*v.x*ci + v.z*s, v.y*v.y*ci + c    , v.y*v.z*ci - v.x*s],
+     [v.z*v.x*ci - v.y*s, v.z*v.y*ci + v.x*s, v.z*v.z*ci + c    ],
+     [0                 , 0                 , 0                 ]]
 
 func x_rotation*(α: Real): Transform3D =
     let c = cos α
     let s = sin α
-    [[1, 0,  0, 0],
-     [0, c, -s, 0],
-     [0, s,  c, 0]]
+    [[1, 0,  0],
+     [0, c, -s],
+     [0, s,  c],
+     [0, 0,  0]]
 
 func y_rotation*(α: Real): Transform3D =
     let c = cos α
     let s = sin α
-    [[ c, 0, s, 0],
-     [ 0, 1, 0, 0],
-     [-s, 0, c, 0]]
+    [[ c, 0, s],
+     [ 0, 1, 0],
+     [-s, 0, c],
+     [ 0, 0, 0]]
 
 func z_rotation*(α: Real): Transform3D =
     let c = cos α
     let s = sin α
-    [[c, -s, 0, 0],
-     [s,  c, 0, 0],
-     [0,  0, 1, 0]]
+    [[c, -s, 0],
+     [s,  c, 0],
+     [0,  0, 1],
+     [0,  0, 0]]
 
 {.pop.}

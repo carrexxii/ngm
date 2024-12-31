@@ -2,75 +2,154 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import common, vector, matrix, quat
-from std/strformat import `&`
+import std/math, common, util, vector, quat, matrix
 
-type DQuat* = distinct array[2, Quat]
+type DQuat* = object
+    real*: Quat
+    dual*: Quat
 
-converter `DQuat -> ptr DQuat`(q: DQuat): ptr DQuat = q.addr
-
-func `[]`*(q: DQuat; i: SomeInteger): Quat =
-    cast[array[2, Quat]](q)[i]
-
-func `$`*(q: DQuat): string = &"Dual Quaternion [{cast[Vec4](q[0])}; {cast[Vec4](q[1])}]"
-
-{.push header: CGLMDir / "dquat.h".}
-proc glm_dquat*(q: ptr DQuat; r, d: ptr Quat)            {.importc: "glm_dquat" .}
-proc glm_dquatv*(q: ptr DQuat; r: ptr Quat; t: ptr Vec3) {.importc: "glm_dquatv".}
-
-proc glm_dquat_conjugate*(q, dst: ptr DQuat)             {.importc: "glm_dquat_conjugate"   .}
-proc glm_dquat_norm*(q: ptr DQuat): float32              {.importc: "glm_dquat_norm"        .}
-proc glm_dquat_normalize*(q: ptr DQuat)                  {.importc: "glm_dquat_normalize"   .}
-proc glm_dquat_normalize_to*(q, dst: ptr DQuat)          {.importc: "glm_dquat_normalize_to".}
-proc glm_dquat_rotation*(q: ptr DQuat; dst: ptr Quat)    {.importc: "glm_dquat_rotation"    .}
-proc glm_dquat_translation*(q: ptr DQuat; dst: ptr Vec3) {.importc: "glm_dquat_translation" .}
-proc glm_dquat_mat*(q: ptr DQuat; dst: ptr Mat4)         {.importc: "glm_dquat_mat"         .}
-
-proc glm_dquat_add*(q, p, dst: ptr DQuat)                       {.importc: "glm_dquat_add"  .}
-proc glm_dquat_sub*(q, p, dst: ptr DQuat)                       {.importc: "glm_dquat_sub"  .}
-proc glm_dquat_mul*(q, p, dst: ptr DQuat)                       {.importc: "glm_dquat_mul"  .}
-proc glm_dquat_div*(q, p, dst: ptr DQuat)                       {.importc: "glm_dquat_div"  .}
-proc glm_dquat_scale*(q: ptr DQuat; p: float32; dst: ptr DQuat) {.importc: "glm_dquat_scale".}
-proc glm_dquat_dot*(q, p: ptr DQuat): float32                   {.importc: "glm_dquat_dot"  .}
-{.pop.}
+const DQuatIdent* = DQuat(real: [Real 0, 0, 0, 1],
+                          dual: [Real 0, 0, 0, 0])
 
 {.push inline.}
 
-func dquat*(r, d: Quat)      : DQuat = glm_dquat(result, r, d)
-func dquat*(r: Quat; t: Vec3): DQuat = glm_dquatv(result, r, t)
+converter `array[Quat] -> DQuat`*(arr: array[2, Quat]): DQuat = DQuat(real: arr[0], dual: arr[1])
 
-func conjugate*(q: DQuat): DQuat = glm_dquat_conjugate(q, result)
-func conj*(q: DQuat)     : DQuat = q.conjugate
+func `$`*(q: DQuat): string  = &"[{q.real}; {q.dual}]"
+func repr*(q: DQuat): string = &"DQuat [real: {repr q.real}; dual: {repr q.dual}]"
 
-func norm*(q: DQuat): float32 = glm_dquat_norm q
-func mag*(q: DQuat) : float32 = q.norm
+func `==`*(q, p: DQuat): bool = (q.real == p.real) and (q.dual == p.dual)
+func `=~`*(q, p: DQuat): bool = (q.real =~ p.real) and (q.dual =~ p.dual)
 
-func normalize*(q: var DQuat)     = glm_dquat_normalize q
-func normalized*(q: DQuat): DQuat = glm_dquat_normalize_to(q, result)
+func `-`*(q: DQuat): DQuat = [-q.real, -q.dual]
 
-func rotation*(q: DQuat): Quat = glm_dquat_rotation(q, result)
-func rot*(q: DQuat)     : Quat = q.rotation
+func `+`*(q, p: DQuat): DQuat = [q.real + p.real, q.dual + p.dual]
+func `-`*(q, p: DQuat): DQuat = [q.real - p.real, q.dual - p.dual]
 
-func translation*(q: DQuat): Vec3 = glm_dquat_translation(q, result)
-func trans*(q: DQuat)      : Vec3 = q.translation
+func `+=`*(q: var DQuat; p: DQuat): DQuat = q = q + p
+func `-=`*(q: var DQuat; p: DQuat): DQuat = q = q - p
 
-func mat*(q: DQuat): Mat4 = glm_dquat_mat(q, result)
+func `*`*(q, p: DQuat): DQuat = [q.real*p.real, q.real*p.dual + q.dual*p.real]
+func `*`*(q: DQuat; s: Real): DQuat = [s*q.real, s*q.dual]
+func `*`*(s: Real; q: DQuat): DQuat = q*s
+func `/`*(q: DQuat; s: Real): DQuat = [q.real/s, q.dual/s]
 
-func dot*(q, p: DQuat): float32 = glm_dquat_dot(q, p)
+func `*=`*(q: var DQuat; p: DQuat) = q = q*p
+func `*=`*(q: var DQuat; s: Real)  = q = q*s
+func `/=`*(q: var DQuat; s: Real)  = q = q/s
 
-func `+`*(q, p: DQuat): DQuat = glm_dquat_add(q, p, result)
-func `-`*(q, p: DQuat): DQuat = glm_dquat_sub(q, p, result)
-func `*`*(q, p: DQuat): DQuat = glm_dquat_mul(q, p, result)
-func `/`*(q, p: DQuat): DQuat = glm_dquat_div(q, p, result)
-func `*`*(q: DQuat; s: float32): DQuat = glm_dquat_scale(q, s, result)
-func `∙`*(q, p: DQuat): float32 = dot(q, p)
+func dot*(q, p: DQuat): Real = q.real ∙ p.real
+func `∙`*(q, p: DQuat): Real = q.real ∙ p.real
 
-func `+=`*(q, p: var DQuat) = q = q + p
-func `-=`*(q, p: var DQuat) = q = q - p
-func `*=`*(q, p: var DQuat) = q = q * p
-func `/=`*(q, p: var DQuat) = q = q / p
-func `*=`*(q: var DQuat; s: float32) = q = q * s
+func conjugate*(q: DQuat): DQuat = [conj q.real, conj q.dual]
+func conj*(q: DQuat): DQuat = conjugate q
+
+func norm2*(q: DQuat): Real =
+    let m1 = mag q.real
+    let m2 = mag q.dual
+    m1^2 + m2^2
+func norm*(q: DQuat): Real = sqrt norm2 q
+func mag*(q: DQuat): Real  = norm q
+
+func normalize*(q: var DQuat) =
+    normalize q.real
+    normalize q.dual
+func normalized*(q: DQuat): DQuat =
+    result = q
+    normalize result
+
+func dquat*(r, d: Quat): DQuat = [normalized r, d]
+func dquat*(v: Vec3): DQuat    = [quat(0, 0, 0, 1), quat(v.x/2, v.y/2, v.z/2, 0)]
+func dquat*(q: Quat): DQuat    = [normalized q, quat(0, 0, 0, 0)]
+
+func dquat*(n: Vec3; α: Radians; t: Vec3): DQuat =
+    let s = sin(α/2)
+    let qt = dquat(quat(0, 0, 0, 1), quat(t.x/2, t.y/2, t.z/2, 0))
+    let qr = dquat(quat(Real α*n.x, Real α*n.y, Real α*n.z, cos(α/2)), quat(0, 0, 0, 0))
+    qt*qr
+
+func dquat*(q: Quat; t: Vec3): DQuat =
+    result.real = normalized q
+    result.dual = quat(t.x, t.y, t.z, 0)*result.real*0.5
+
+func mat*(q: DQuat): Transform3D =
+    let q = normalized q
+    let (x, y, z, w) = unpack q.real
+    let t = 2*q.dual*(conj q.real)
+    [[w*w + x*x - y*y - z*z, 2*x*y + 2*w*z        , 2*x*z - 2*w*y        ],
+     [2*x*y - 2*w*z        , w*w + y*y - x*x - z*z, 2*y*z + 2*w*x        ],
+     [2*x*z + 2*w*y        , 2*y*z - 2*w*x        , w*w + z*z - x*x - y*y],
+     [t.x                  , t.y                  , t.z                  ]]
+
+func mat4*(q: DQuat): Mat4 =
+    let q = normalized q
+    let (x, y, z, w) = unpack q.real
+    let t = 2*q.dual*(conj q.real)
+    [[w*w + x*x - y*y - z*z, 2*x*y + 2*w*z        , 2*x*z - 2*w*y        , 0],
+     [2*x*y - 2*w*z        , w*w + y*y - x*x - z*z, 2*y*z + 2*w*x        , 0],
+     [2*x*z + 2*w*y        , 2*y*z - 2*w*x        , w*w + z*z - x*x - y*y, 0],
+     [t.x                  , t.y                  , t.z                  , 1]]
+
+func mat3*(q: DQuat): Mat3 =
+    let q = normalized q
+    let (x, y, z, w) = unpack q.real
+    [[w*w + x*x - y*y - z*z, 2*x*y + 2*w*z        , 2*x*z - 2*w*y        ],
+     [2*x*y - 2*w*z        , w*w + y*y - x*x - z*z, 2*y*z + 2*w*x        ],
+     [2*x*z + 2*w*y        , 2*y*z - 2*w*x        , w*w + z*z - x*x - y*y]]
+
+func translation*(q: DQuat): Vec3 =
+    let r = q.real
+    let d = q.dual
+    2*vec(d.x*r.w - d.w*r.x - d.y*r.z + d.z*r.y,
+          d.y*r.w - d.w*r.y - d.z*r.x + d.x*r.z,
+          d.z*r.w - d.w*r.z - d.x*r.y + d.y*r.x)
+func trans*(q: DQuat): Vec3 = translation q
+
+func rotation*(q: DQuat): Quat = q.real
+func rot*(q: DQuat): Quat      = q.rotation
+
+func translate*(q: var DQuat; v: Vec3) =
+    let r = q.real
+    let d = q.dual
+    let t = 0.5*v
+    q.dual = quat(r.w*t.x + r.y*t.z - r.z*t.y + d.x,
+                  r.w*t.y + r.z*t.x - r.x*t.z + d.y,
+                  r.w*t.z + r.x*t.y - r.y*t.x + d.z,
+                 -r.x*t.x - r.y*t.y - r.z*t.z + d.w)
+func translated*(q: DQuat; v: Vec3): DQuat =
+    result = q
+    result.translate v
+
+func rotate*(q: var DQuat; p: Quat) =
+    let r = q.real
+    let d = q.dual
+    q = [quat(r.x*p.w + r.w*p.x + r.y*p.z - r.z*p.y,
+              r.y*p.w + r.w*p.y + r.z*p.x - r.x*p.z,
+              r.z*p.w + r.w*p.z + r.x*p.y - r.y*p.x,
+              r.w*p.w - r.x*p.x - r.y*p.y - r.z*p.z),
+         quat(d.x*p.w + d.w*p.x + d.y*p.z - d.z*p.y,
+              d.y*p.w + d.w*p.y + d.z*p.x - d.x*p.z,
+              d.z*p.w + d.w*p.z + d.x*p.y - d.y*p.x,
+              d.w*p.w - d.x*p.x - d.y*p.y - d.z*p.z)]
+
+func rotate*(p: Quat; q: var DQuat) =
+    let r = q.real
+    let d = q.dual
+    q = [quat(p.x*r.w + p.w*r.x + p.y*r.z - p.z*r.y,
+              p.y*r.w + p.w*r.y + p.z*r.x - p.x*r.z,
+              p.z*r.w + p.w*r.z + p.x*r.y - p.y*r.x,
+              p.w*r.w - p.x*r.x - p.y*r.y - p.z*r.z),
+         quat(p.x*r.w + p.w*d.x + p.y*d.z - p.z*d.y,
+              p.y*r.w + p.w*d.y + p.z*d.x - p.x*d.z,
+              p.z*r.w + p.w*d.z + p.x*d.y - p.y*d.x,
+              p.w*r.w - p.x*d.x - p.y*d.y - p.z*d.z)]
+
+func rotated*(q: DQuat; p: Quat): DQuat = result = q; result.rotate p
+func rotated*(p: Quat; q: DQuat): DQuat = result = q; result.rotate p
+
+func `*`*(q: DQuat; p: Quat): DQuat = q.rotated p
+func `*`*(p: Quat; q: DQuat): DQuat = q.rotated p
+
+func `*=`*(q: var DQuat; p: Quat) = q.rotate p
 
 {.pop.}
-
-const DQuatIdent* = DQuat [Quat [0'f32, 0, 0, 1], Quat [0'f32, 0, 0, 0]]

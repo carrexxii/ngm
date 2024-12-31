@@ -136,6 +136,9 @@ func `-=`*[T: AnyVec](v: var T; u: T) = v = v - u
 func `*`*(v: Vec2; s: SomeNumber): Vec2 = vec(v.x * Real s, v.y * Real s)
 func `*`*(v: Vec3; s: SomeNumber): Vec3 = vec(v.x * Real s, v.y * Real s, v.z * Real s)
 func `*`*(v: Vec4; s: SomeNumber): Vec4 = vec(v.x * Real s, v.y * Real s, v.z * Real s, v.w * Real s)
+func `*`*(s: SomeNumber; v: Vec2): Vec2 = v*s
+func `*`*(s: SomeNumber; v: Vec3): Vec3 = v*s
+func `*`*(s: SomeNumber; v: Vec4): Vec4 = v*s
 func `*=`*[T: AnyVec](v: var T; s: SomeNumber) = v = v * s
 
 func `/`*(v: Vec2; s: SomeNumber): Vec2 = vec(v.x / Real s, v.y / Real s)

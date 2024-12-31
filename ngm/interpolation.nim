@@ -1,4 +1,4 @@
-import std/math, common, util
+import std/math, common, util, quat, dquat
 
 {.push inline.}
 
@@ -101,5 +101,20 @@ func ease_in_out_bounce*(x: Real): Real =
 
 func lerp*(a, b: Radians; t: Real): Radians {.borrow.}
 func lerp*(a, b: Degrees; t: Real): Degrees {.borrow.}
+
+func lerp*(q, p: DQuat; t: Real): DQuat =
+    var t1 = t
+    let t2 = 1 - t
+    if (q ∙ p) < 0:
+        t1 = -t
+
+    [quat(q.real.x*t2 + p.real.x*t1,
+          q.real.y*t2 + p.real.y*t1,
+          q.real.z*t2 + p.real.z*t1,
+          q.real.w*t2 + p.real.w*t1),
+     quat(q.dual.x*t2 + p.dual.x*t1,
+          q.dual.y*t2 + p.dual.y*t1,
+          q.dual.z*t2 + p.dual.z*t1,
+          q.dual.w*t2 + p.dual.w*t1)]
 
 {.pop.}
