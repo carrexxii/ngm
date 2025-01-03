@@ -5,10 +5,8 @@
 import common, util, vector, matrix
 
 type
-    Point2D* = object
-        x*, y*: Real
-    Point3D* = object
-        x*, y*, z*: Real
+    Point2D* = distinct Vec2
+    Point3D* = distinct Vec3
 
     Rect* = object
         x*, y*: Real
@@ -19,51 +17,58 @@ type
 
 {.push inline.}
 
-func `$`*(p: Point2D): string = &"({p.x}, {p.y})"
-func `$`*(p: Point3D): string = &"({p.x}, {p.y}, {p.z})"
+func `[]`*(p: Point2D; i: range[0..1]): Real = cast[Vec2](p)[i]
+func `[]`*(p: Point3D; i: range[0..2]): Real = cast[Vec3](p)[i]
+func `[]=`*(p: var Point2D; i: range[0..1]; val: Real) = cast[ptr UncheckedArray[Real]](p.addr)[i] = val
+func `[]=`*(p: var Point3D; i: range[0..2]; val: Real) = cast[ptr UncheckedArray[Real]](p.addr)[i] = val
+
+# TODO: isolate swizzling from vector
+func x*(p: Point2D | Point3D): Real = p[0]
+func y*(p: Point2D | Point3D): Real = p[1]
+func z*(p: Point3D): Real           = p[2]
+
+func `$`*(p: Point2D): string {.borrow.} #= &"({p.x}, {p.y})"
+func `$`*(p: Point3D): string {.borrow.} #= &"({p.x}, {p.y}, {p.z})"
 
 func repr*(p: Point2D): string = &"Point2D (x: {p.x}, y: {p.y})"
 func repr*(p: Point3D): string = &"Point3D (x: {p.x}, y: {p.y}, z: {p.z})"
 
-func point*(x: SomeNumber, y: SomeNumber): Point2D                = Point2D(x: Real x, y: Real y)
-func point*(x: SomeNumber, y: SomeNumber, z: SomeNumber): Point3D = Point3D(x: Real x, y: Real y, z: Real z)
+func point*(x, y: Real): Point2D    = Point2D [x, y]
+func point*(x, y, z: Real): Point3D = Point3D [x, y, z]
 
-func point*(v: Vec2): Point2D = point v.x, v.y
-func point*(v: Vec3): Point3D = point v.x, v.y, v.z
+func vec*(p: Point2D): Vec3 = vec p.x, p.y, 1.0
+func vec*(p: Point3D): Vec4 = vec p.x, p.y, p.z, 1.0
 
-func vec*(p: Point2D): Vec2 = vec p.x, p.y
-func vec*(p: Point3D): Vec3 = vec p.x, p.y, p.z
+func norm*(p: Point2D): Real {.borrow.}
+func norm*(p: Point3D): Real {.borrow.}
+func mag*(p: Point2D): Real {.borrow.}
+func mag*(p: Point3D): Real {.borrow.}
 
-func vec3*(p: Point2D): Vec3 = vec p.x, p.y, 1.0
-func vec4*(p: Point3D): Vec4 = vec p.x, p.y, p.z, 1.0
+func `==`*(p1, p2: Point2D): bool {.borrow.}
+func `==`*(p1, p2: Point3D): bool {.borrow.}
 
-func arr*(p: Point2D): array[2, Real] = [p.x, p.y]
-func arr*(p: Point3D): array[3, Real] = [p.x, p.y, p.z]
+func `=~`*(p1, p2: Point2D): bool {.borrow.}
+func `=~`*(p1, p2: Point3D): bool {.borrow.}
 
-func `==`*(p1, p2: Point2D): bool = (p1.x == p2.x) and (p1.y == p2.y)
-func `==`*(p1, p2: Point3D): bool = (p1.x == p2.x) and (p1.y == p2.y) and (p1.z == p2.z)
+func `-`*(p: Point2D): Point2D {.borrow.}
+func `-`*(p: Point3D): Point3D {.borrow.}
 
-func `=~`*(p1, p2: Point2D): bool = (p1.x =~ p2.x) and (p1.y =~ p2.y)
-func `=~`*(p1, p2: Point3D): bool = (p1.x =~ p2.x) and (p1.y =~ p2.y) and (p1.z =~ p2.z)
+func `+`*(p: Point2D; v: Vec2): Point2D {.borrow.}
+func `+`*(p: Point3D; v: Vec3): Point3D {.borrow.}
+func `*`*(s: Real; p: Point2D): Point2D {.borrow.}
+func `*`*(s: Real; p: Point3D): Point3D {.borrow.}
+func `*`*(p: Point2D; s: Real): Point2D {.borrow.}
+func `*`*(p: Point3D; s: Real): Point3D {.borrow.}
 
-func `-`*(p: Point2D): Point2D = point -p.x, -p.y
-func `-`*(p: Point3D): Point3D = point -p.x, -p.y, -p.z
+func `+=`*(p: var Point2D; v: Vec2) {.borrow.}
+func `+=`*(p: var Point3D; v: Vec3) {.borrow.}
+func `-=`*(p: var Point2D; v: Vec2) {.borrow.}
+func `-=`*(p: var Point3D; v: Vec3) {.borrow.}
+func `*=`*(p: var Point2D; s: Real) {.borrow.}
+func `*=`*(p: var Point3D; s: Real) {.borrow.}
 
-func `+`*(p: Point2D; v: Vec2): Point2D = point p.x + v.x, p.y + v.y
-func `+`*(p: Point3D; v: Vec3): Point3D = point p.x + v.x, p.y + v.y, p.z + v.z
-func `-`*(p1, p2: Point2D): Vec2        = vec p1.x - p2.x, p1.y - p2.y
-func `-`*(p1, p2: Point3D): Vec3        = vec p1.x - p2.x, p1.y - p2.y, p1.z - p2.z
-func `*`*(s: Real; p: Point2D): Point2D = point s*p.x, s*p.y
-func `*`*(s: Real; p: Point3D): Point3D = point s*p.x, s*p.y, s*p.z
-func `*`*(p: Point2D; s: Real): Point2D = s*p
-func `*`*(p: Point3D; s: Real): Point3D = s*p
-
-func `+=`*(p: var Point2D; v: Vec2) = p = p + v
-func `+=`*(p: var Point3D; v: Vec3) = p = p + v
-func `-=`*(p: var Point2D; v: Vec2) = p = p + -v
-func `-=`*(p: var Point3D; v: Vec3) = p = p + -v
-func `*=`*(p: var Point2D; s: Real) = p = s*p
-func `*=`*(p: var Point3D; s: Real) = p = s*p
+func `-`*(p1, p2: Point2D): Vec2 = vec p1.x - p2.x, p1.y - p2.y
+func `-`*(p1, p2: Point3D): Vec3 = vec p1.x - p2.x, p1.y - p2.y, p1.z - p2.z
 
 func `*`*(m: Mat3; p: Point2D): Point2D =
     expand_alias m

@@ -157,7 +157,7 @@ func slerp*(q, p: Quat; t: Real): Quat =
 func look*(q: Quat; pos: Point3D): Mat4 =
     ngm_assert (q.mag =~ 1), "Quaternion should be normalized before matrix conversion"
     result = mat4 q
-    result[3] = -vec4(result*pos)
+    result[3] = -vec(result*pos)
 
 func look*(dir, up: Vec3): Quat =
     let dir = normalized dir

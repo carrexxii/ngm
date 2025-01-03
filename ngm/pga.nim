@@ -32,6 +32,8 @@
 ##
 ## ∧ = Join
 ## ∨ = Meet
+## ● = Bulk
+## ○ = Weight
 ## ★ = Bulk dual
 ## ☆ = Weight dual
 ##
@@ -88,6 +90,46 @@ elif defined Ngm3D:
         Bivec*      = Bivec3D
         Trivec*     = Trivec3D
         Antiscalar* = Antiscalar3D
+
+func bulk*(p: Vec4    ): Vec4     = [p.x, p.y, p.z, 0]
+func bulk*(p: Point3D ): Vec4     = [p.x, p.y, p.z, 0]
+func bulk*(l: Bivec3D ): Bivec3D  = Bivec3D(m: l.m)
+func bulk*(g: Trivec3D): Trivec3D = Trivec3D [Real 0, 0, 0, g.w]
+
+func weight*(p: Vec4    ): Vec4     = Vec4 [Real 0, 0, 0, p.w]
+func weight*(p: Point3D ): Vec4     = Vec4 [Real 0, 0, 0, 1]
+func weight*(l: Bivec3D ): Bivec3D  = Bivec3D(v: l.v)
+func weight*(g: Trivec3D): Trivec3D = Trivec3D [g.x, g.y, g.z, 0]
+
+func bulk_dual*(p: Vec4    ): Trivec3D = Trivec3D [p.x, p.y, p.z, 0]
+func bulk_dual*(p: Point3D ): Trivec3D = Trivec3D [p.x, p.y, p.z, 0]
+func bulk_dual*(l: Bivec3D ): BiVec3D  = Bivec3D(m: -l.m)
+func bulk_dual*(g: Trivec3D): Vec4     = [Real 0, 0, 0, -g.w]
+
+func weight_dual*(p: Vec4    ): Trivec3D = Trivec3D [Real 0, 0, 0, p.w]
+func weight_dual*(p: Point3D ): Trivec3D = Trivec3D [Real 0, 0, 0, 1]
+func weight_dual*(l: Bivec3D ): BiVec3D  = Bivec3D(v: -l.v)
+func weight_dual*(g: Trivec3D): Vec4     = [-g.x, -g.y, -g.z, 0]
+
+func bulk_norm*(p: Vec4    ): Real = norm p.xyz
+func bulk_norm*(p: Point3D ): Real = norm p
+func bulk_norm*(l: Bivec3D ): Real = norm l.m
+func bulk_norm*(g: Trivec3D): Real = abs g.w
+
+func weight_norm*(p: Vec4    ): Antiscalar3D = AntiScalar3D abs p.w
+func weight_norm*(p: Point3D ): Antiscalar3D = AntiScalar3D 1
+func weight_norm*(l: Bivec3D ): Antiscalar3D = AntiScalar3D norm l.v
+func weight_norm*(g: Trivec3D): Antiscalar3D = AntiScalar3D norm g.xyz
+
+func attitude*(p: Vec4    ): Real    = p.w
+func attitude*(p: Point3D ): Real    = 1
+func attitude*(l: Bivec3D ): Vec4    = [l.v.x, l.v.y, l.v.z, 0]
+func attitude*(g: Trivec3D): Bivec3D = Bivec3D(m: g.xyz)
+
+func right_complement*(p: Vec4    ): Trivec3D = Trivec3D p
+func right_complement*(p: Point3D ): Trivec3D = Trivec3D [p.x, p.y, p.z, 1]
+func right_complement*(l: Bivec3D ): BiVec3D  = Bivec3D(v: -l.m, m: -l.v)
+func right_complement*(g: Trivec3D): Vec4     = -g
 
 func wedge*(p, q: Vec3): Bivec2D =
     ## \displaylines{\begin{flalign}
