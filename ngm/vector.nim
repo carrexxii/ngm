@@ -16,6 +16,11 @@ type
 
     AnyVec = Vec2 | Vec3 | Vec4
 
+const
+    Vec2Zero* = Vec2 [Real 0, 0]
+    Vec3Zero* = Vec3 [Real 0, 0, 0]
+    Vec4Zero* = Vec4 [Real 0, 0, 0, 0]
+
 {.push inline.}
 
 func `$`*(v: Vec2): string = &"({v[0]}, {v[1]})"
