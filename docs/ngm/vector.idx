@@ -1,0 +1,97 @@
+nimTitle	vector	ngm/vector.html	module ngm/vector		0
+nim	Vec2	ngm/vector.html#Vec2	type Vec2		13
+nim	Vec3	ngm/vector.html#Vec3	type Vec3		14
+nim	Vec4	ngm/vector.html#Vec4	type Vec4		15
+nim	Vec2Zero	ngm/vector.html#Vec2Zero	const Vec2Zero		20
+nim	Vec3Zero	ngm/vector.html#Vec3Zero	const Vec3Zero		21
+nim	Vec4Zero	ngm/vector.html#Vec4Zero	const Vec4Zero		22
+nim	`$`	ngm/vector.html#$,Vec2	proc `$`(v: Vec2): string		26
+nim	`$`	ngm/vector.html#$,Vec3	proc `$`(v: Vec3): string		27
+nim	`$`	ngm/vector.html#$,Vec4	proc `$`(v: Vec4): string		28
+nim	repr	ngm/vector.html#repr,Vec2	proc repr(v: Vec2): string		30
+nim	repr	ngm/vector.html#repr,Vec3	proc repr(v: Vec3): string		31
+nim	repr	ngm/vector.html#repr,Vec4	proc repr(v: Vec4): string		32
+nim	vec2	ngm/vector.html#vec2,SomeNumber,SomeNumber	proc vec2(x: SomeNumber = 0; y: SomeNumber = 0): Vec2		34
+nim	vec3	ngm/vector.html#vec3,SomeNumber,SomeNumber,SomeNumber	proc vec3(x: SomeNumber = 0; y: SomeNumber = 0; z: SomeNumber = 0): Vec3		35
+nim	vec4	ngm/vector.html#vec4,SomeNumber,SomeNumber,SomeNumber,SomeNumber	proc vec4(x: SomeNumber = 0; y: SomeNumber = 0; z: SomeNumber = 0; w: SomeNumber = 0): Vec4		36
+nim	vec	ngm/vector.html#vec,SomeNumber,SomeNumber	proc vec(x: SomeNumber; y: SomeNumber): Vec2		38
+nim	vec	ngm/vector.html#vec,SomeNumber,SomeNumber,SomeNumber	proc vec(x: SomeNumber; y: SomeNumber; z: SomeNumber): Vec3		39
+nim	vec	ngm/vector.html#vec,SomeNumber,SomeNumber,SomeNumber,SomeNumber	proc vec(x: SomeNumber; y: SomeNumber; z: SomeNumber; w: SomeNumber): Vec4		40
+nim	`.`	ngm/vector.html#..m,AnyVec,untyped	macro `.`(v: AnyVec; fields: untyped): untyped		47
+nim	`.=`	ngm/vector.html#.=.m,AnyVec,untyped,untyped	macro `.=`(v: AnyVec; fields, rhs: untyped): untyped		60
+nim	`==`	ngm/vector.html#==,Vec2,Vec2	proc `==`(v, u: Vec2): bool		100
+nim	`==`	ngm/vector.html#==,Vec3,Vec3	proc `==`(v, u: Vec3): bool		101
+nim	`==`	ngm/vector.html#==,Vec4,Vec4	proc `==`(v, u: Vec4): bool		102
+nim	`=~`	ngm/vector.html#=~,Vec2,Vec2	proc `=~`(v, u: Vec2): bool		104
+nim	`=~`	ngm/vector.html#=~,Vec3,Vec3	proc `=~`(v, u: Vec3): bool		105
+nim	`=~`	ngm/vector.html#=~,Vec4,Vec4	proc `=~`(v, u: Vec4): bool		106
+nim	clamped	ngm/vector.html#clamped,Vec2,SomeNumber,SomeNumber	proc clamped(v: Vec2; min, max: SomeNumber): Vec2		108
+nim	clamped	ngm/vector.html#clamped,Vec3,SomeNumber,SomeNumber	proc clamped(v: Vec3; min, max: SomeNumber): Vec3		112
+nim	clamped	ngm/vector.html#clamped,Vec4,SomeNumber,SomeNumber	proc clamped(v: Vec4; min, max: SomeNumber): Vec4		116
+nim	clamped	ngm/vector.html#clamped,Vec2,Vec2,Vec2	proc clamped(v: Vec2; min, max: Vec2): Vec2		120
+nim	clamped	ngm/vector.html#clamped,Vec3,Vec3,Vec3	proc clamped(v: Vec3; min, max: Vec3): Vec3		121
+nim	clamped	ngm/vector.html#clamped,Vec4,Vec4,Vec4	proc clamped(v: Vec4; min, max: Vec4): Vec4		122
+nim	clamp	ngm/vector.html#clamp,T,Real,Real	proc clamp[T: AnyVec](v: var T; min, max: Real)		124
+nim	clamp	ngm/vector.html#clamp,T,T,T	proc clamp[T: AnyVec](v: var T; min, max: T)		125
+nim	`-`	ngm/vector.html#-,Vec2	proc `-`(v: Vec2): Vec2		127
+nim	`-`	ngm/vector.html#-,Vec3	proc `-`(v: Vec3): Vec3		128
+nim	`-`	ngm/vector.html#-,Vec4	proc `-`(v: Vec4): Vec4		129
+nim	`+`	ngm/vector.html#+,Vec2,Vec2	proc `+`(v, u: Vec2): Vec2		131
+nim	`+`	ngm/vector.html#+,Vec3,Vec3	proc `+`(v, u: Vec3): Vec3		132
+nim	`+`	ngm/vector.html#+,Vec4,Vec4	proc `+`(v, u: Vec4): Vec4		133
+nim	`+=`	ngm/vector.html#+=,T,T	proc `+=`[T: AnyVec](v: var T; u: T)		134
+nim	`-`	ngm/vector.html#-,Vec2,Vec2	proc `-`(v, u: Vec2): Vec2		136
+nim	`-`	ngm/vector.html#-,Vec3,Vec3	proc `-`(v, u: Vec3): Vec3		137
+nim	`-`	ngm/vector.html#-,Vec4,Vec4	proc `-`(v, u: Vec4): Vec4		138
+nim	`-=`	ngm/vector.html#-=,T,T	proc `-=`[T: AnyVec](v: var T; u: T)		139
+nim	`*`	ngm/vector.html#*,Vec2,SomeNumber	proc `*`(v: Vec2; s: SomeNumber): Vec2		141
+nim	`*`	ngm/vector.html#*,Vec3,SomeNumber	proc `*`(v: Vec3; s: SomeNumber): Vec3		142
+nim	`*`	ngm/vector.html#*,Vec4,SomeNumber	proc `*`(v: Vec4; s: SomeNumber): Vec4		143
+nim	`*`	ngm/vector.html#*,SomeNumber,Vec2	proc `*`(s: SomeNumber; v: Vec2): Vec2		144
+nim	`*`	ngm/vector.html#*,SomeNumber,Vec3	proc `*`(s: SomeNumber; v: Vec3): Vec3		145
+nim	`*`	ngm/vector.html#*,SomeNumber,Vec4	proc `*`(s: SomeNumber; v: Vec4): Vec4		146
+nim	`*=`	ngm/vector.html#*=,T,SomeNumber	proc `*=`[T: AnyVec](v: var T; s: SomeNumber)		147
+nim	`/`	ngm/vector.html#/,Vec2,SomeNumber	proc `/`(v: Vec2; s: SomeNumber): Vec2		149
+nim	`/`	ngm/vector.html#/,Vec3,SomeNumber	proc `/`(v: Vec3; s: SomeNumber): Vec3		150
+nim	`/`	ngm/vector.html#/,Vec4,SomeNumber	proc `/`(v: Vec4; s: SomeNumber): Vec4		151
+nim	`/=`	ngm/vector.html#/=,T,SomeNumber	proc `/=`[T: AnyVec](v: var T; s: SomeNumber)		152
+nim	dot	ngm/vector.html#dot,Vec2,Vec2	proc dot(v, u: Vec2): Real		155
+nim	dot	ngm/vector.html#dot,Vec3,Vec3	proc dot(v, u: Vec3): Real		156
+nim	dot	ngm/vector.html#dot,Vec4,Vec4	proc dot(v, u: Vec4): Real		157
+nim	∙	ngm/vector.html#∙,AnyVec,AnyVec	proc ∙(v, u: AnyVec): Real		158
+nim	norm2	ngm/vector.html#norm2,T	proc norm2[T: AnyVec](v: T): Real		160
+nim	norm	ngm/vector.html#norm,T	proc norm[T: AnyVec](v: T): Real		161
+nim	mag	ngm/vector.html#mag,AnyVec	proc mag(v: AnyVec): Real		162
+nim	normalized	ngm/vector.html#normalized,T	proc normalized[T: AnyVec](v: T): T		164
+nim	normalize	ngm/vector.html#normalize,AnyVec	proc normalize(v: var AnyVec)		168
+nim	distance2	ngm/vector.html#distance2,Vec2,Vec2	proc distance2(v, u: Vec2): Real		170
+nim	distance2	ngm/vector.html#distance2,Vec3,Vec3	proc distance2(v, u: Vec3): Real		171
+nim	distance	ngm/vector.html#distance,,	proc distance(v, u: Vec2 | Vec3): Real		172
+nim	`<=>`	ngm/vector.html#<=>,,	proc `<=>`(v, u: Vec2 | Vec3): Real		173
+nim	`<->`	ngm/vector.html#<->,,	proc `<->`(v, u: Vec2 | Vec3): Real		174
+nim	angle	ngm/vector.html#angle,,	proc angle(v, u: Vec2 | Vec3): Radians		176
+nim	cross	ngm/vector.html#cross,Vec3,Vec3	proc cross(v, u: Vec3): Vec3		179
+nim	×	ngm/vector.html#×,Vec3,Vec3	proc ×(v, u: Vec3): Vec3		183
+nim	rotated	ngm/vector.html#rotated,Vec2,Radians	proc rotated(v: Vec2; α: Radians): Vec2		185
+nim	rotated	ngm/vector.html#rotated,Vec3,Radians,Vec3	proc rotated(v: Vec3; α: Radians; axis: Vec3): Vec3		191
+nim	rotate	ngm/vector.html#rotate,Vec2,Radians	proc rotate(v: var Vec2; α: Radians): Vec2		202
+nim	rotate	ngm/vector.html#rotate,Vec3,Radians,Vec3	proc rotate(v: var Vec3; α: Radians; axis: Vec3): Vec3		203
+nim	reflected	ngm/vector.html#reflected,T,T	proc reflected[T: Vec2 | Vec3](v, n: T): T		205
+nim	reflect	ngm/vector.html#reflect,T,T	proc reflect[T: Vec2 | Vec3](v: var T; n: T)		206
+nim	refracted	ngm/vector.html#refracted,T,T,Real	proc refracted[T: Vec2 | Vec3](v, n: T; μ: Real): Option[T]		208
+nim	refract	ngm/vector.html#refract,T,T,Real	proc refract[T: Vec2 | Vec3](v: var T; n: T; μ: Real): bool		218
+nimgrp	dot	ngm/vector.html#dot-procs-all	proc		155
+nimgrp	==	ngm/vector.html#==-procs-all	proc		100
+nimgrp	=~	ngm/vector.html#=~-procs-all	proc		104
+nimgrp	+	ngm/vector.html#+-procs-all	proc		131
+nimgrp	vec	ngm/vector.html#vec-procs-all	proc		38
+nimgrp	-	ngm/vector.html#--procs-all	proc		127
+nimgrp	/	ngm/vector.html#/-procs-all	proc		149
+nimgrp	distance2	ngm/vector.html#distance2-procs-all	proc		170
+nimgrp	$	ngm/vector.html#$-procs-all	proc		26
+nimgrp	*	ngm/vector.html#*-procs-all	proc		141
+nimgrp	clamped	ngm/vector.html#clamped-procs-all	proc		108
+nimgrp	repr	ngm/vector.html#repr-procs-all	proc		30
+nimgrp	rotated	ngm/vector.html#rotated-procs-all	proc		185
+nimgrp	clamp	ngm/vector.html#clamp-procs-all	proc		124
+nimgrp	rotate	ngm/vector.html#rotate-procs-all	proc		202

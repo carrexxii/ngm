@@ -1,0 +1,4 @@
+nimTitle	common	ngm/common.html	module ngm/common		0
+nim	Real	ngm/common.html#Real	type Real		11
+nim	ngm_assert	ngm/common.html#ngm_assert.t,,	template ngm_assert(cond, body)		13
+nim	`=~`	ngm/common.html#=~,Real,Real	proc `=~`(a, b: Real): bool		17

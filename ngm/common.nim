@@ -8,10 +8,6 @@ from std/strformat import `&`
 from std/math      import almost_equal
 export sugar, enumerate, with, `&`, `/`
 
-const CGLMDir* = current_source_path.parent_dir() /../ "lib/cglm/include/cglm/"
-
-const DefaultMouseSensitivity* = 0.0005
-
 type Real* = float32
 
 template ngm_assert*(cond, body) =

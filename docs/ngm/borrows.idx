@@ -1,0 +1,12 @@
+nimTitle	borrows	ngm/borrows.html	module ngm/borrows		0
+nim	bkAdditive	ngm/borrows.html#bkAdditive	BorrowKind.bkAdditive		3
+nim	bkMultiplicative	ngm/borrows.html#bkMultiplicative	BorrowKind.bkMultiplicative		3
+nim	bkComparable	ngm/borrows.html#bkComparable	BorrowKind.bkComparable		3
+nim	bkPrintable	ngm/borrows.html#bkPrintable	BorrowKind.bkPrintable		3
+nim	BorrowKind	ngm/borrows.html#BorrowKind	enum BorrowKind		3
+nim	borrow_additive	ngm/borrows.html#borrow_additive.t,typedesc	template borrow_additive(T: typedesc)		9
+nim	borrow_multiplicative	ngm/borrows.html#borrow_multiplicative.t,typedesc,typeof(distinct_base T)	template borrow_multiplicative(T: typedesc; base = distinct_base T)		19
+nim	borrow_comparable	ngm/borrows.html#borrow_comparable.t,typedesc	template borrow_comparable(T: typedesc)		27
+nim	borrow_printable	ngm/borrows.html#borrow_printable.t,typedesc	template borrow_printable(T: typedesc)		32
+nim	borrow	ngm/borrows.html#borrow.t,typedesc,varargs[BorrowKind]	template borrow(T: typedesc; kinds: varargs[BorrowKind])		36
+nim	borrow_unit	ngm/borrows.html#borrow_unit.t,typedesc	template borrow_unit(T: typedesc)		42

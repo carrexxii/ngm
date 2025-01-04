@@ -1,0 +1,95 @@
+nimTitle	pga	ngm/pga.html	module ngm/pga		0
+nim	Bivec2D	ngm/pga.html#Bivec2D	object Bivec2D		53
+nim	Bivec3D	ngm/pga.html#Bivec3D	object Bivec3D		57
+nim	Trivec3D	ngm/pga.html#Trivec3D	object Trivec3D		61
+nim	Antiscalar2D	ngm/pga.html#Antiscalar2D	type Antiscalar2D		67
+nim	Antiscalar3D	ngm/pga.html#Antiscalar3D	type Antiscalar3D		68
+nim	Motor	ngm/pga.html#Motor	object Motor		70
+nim	Flector	ngm/pga.html#Flector	object Flector		74
+nim	bivec	ngm/pga.html#bivec,Real,Real,Real	proc bivec(x, y, w: Real): Bivec2D		80
+nim	bivec	ngm/pga.html#bivec,Real,Real,Real,Real,Real,Real	proc bivec(vx, vy, vz, mx, my, mz: Real): Bivec3D		81
+nim	trivec	ngm/pga.html#trivec,Real,Real,Real,Real	proc trivec(x, y, z, w: Real): Trivec3D		82
+nim	bivec	ngm/pga.html#bivec,Vec3	proc bivec(v: Vec3): Bivec2D		84
+nim	bivec	ngm/pga.html#bivec,Vec3,Vec3	proc bivec(v, m: Vec3): Bivec3D		85
+nim	trivec	ngm/pga.html#trivec,Vec4	proc trivec(v: Vec4): Trivec3D		86
+nim	bulk	ngm/pga.html#bulk,Vec4	proc bulk(p: Vec4): Vec4		98
+nim	bulk	ngm/pga.html#bulk,Point3D	proc bulk(p: Point3D): Vec4		99
+nim	bulk	ngm/pga.html#bulk,Bivec3D	proc bulk(l: Bivec3D): Bivec3D		100
+nim	bulk	ngm/pga.html#bulk,Trivec3D	proc bulk(g: Trivec3D): Trivec3D		101
+nim	weight	ngm/pga.html#weight,Vec4	proc weight(p: Vec4): Vec4		103
+nim	weight	ngm/pga.html#weight,Point3D	proc weight(p: Point3D): Vec4		104
+nim	weight	ngm/pga.html#weight,Bivec3D	proc weight(l: Bivec3D): Bivec3D		105
+nim	weight	ngm/pga.html#weight,Trivec3D	proc weight(g: Trivec3D): Trivec3D		106
+nim	bulk_dual	ngm/pga.html#bulk_dual,Vec4	proc bulk_dual(p: Vec4): Trivec3D		108
+nim	bulk_dual	ngm/pga.html#bulk_dual,Point3D	proc bulk_dual(p: Point3D): Trivec3D		109
+nim	bulk_dual	ngm/pga.html#bulk_dual,Bivec3D	proc bulk_dual(l: Bivec3D): Bivec3D		110
+nim	bulk_dual	ngm/pga.html#bulk_dual,Trivec3D	proc bulk_dual(g: Trivec3D): Vec4		111
+nim	weight_dual	ngm/pga.html#weight_dual,Vec4	proc weight_dual(p: Vec4): Trivec3D		113
+nim	weight_dual	ngm/pga.html#weight_dual,Point3D	proc weight_dual(p: Point3D): Trivec3D		114
+nim	weight_dual	ngm/pga.html#weight_dual,Bivec3D	proc weight_dual(l: Bivec3D): Bivec3D		115
+nim	weight_dual	ngm/pga.html#weight_dual,Trivec3D	proc weight_dual(g: Trivec3D): Vec4		116
+nim	bulk_norm	ngm/pga.html#bulk_norm,Vec4	proc bulk_norm(p: Vec4): Real		118
+nim	bulk_norm	ngm/pga.html#bulk_norm,Point3D	proc bulk_norm(p: Point3D): Real		119
+nim	bulk_norm	ngm/pga.html#bulk_norm,Bivec3D	proc bulk_norm(l: Bivec3D): Real		120
+nim	bulk_norm	ngm/pga.html#bulk_norm,Trivec3D	proc bulk_norm(g: Trivec3D): Real		121
+nim	weight_norm	ngm/pga.html#weight_norm,Vec4	proc weight_norm(p: Vec4): Antiscalar3D		123
+nim	weight_norm	ngm/pga.html#weight_norm,Point3D	proc weight_norm(p: Point3D): Antiscalar3D		124
+nim	weight_norm	ngm/pga.html#weight_norm,Bivec3D	proc weight_norm(l: Bivec3D): Antiscalar3D		125
+nim	weight_norm	ngm/pga.html#weight_norm,Trivec3D	proc weight_norm(g: Trivec3D): Antiscalar3D		126
+nim	attitude	ngm/pga.html#attitude,Vec4	proc attitude(p: Vec4): Real		128
+nim	attitude	ngm/pga.html#attitude,Point3D	proc attitude(p: Point3D): Real		129
+nim	attitude	ngm/pga.html#attitude,Bivec3D	proc attitude(l: Bivec3D): Vec4		130
+nim	attitude	ngm/pga.html#attitude,Trivec3D	proc attitude(g: Trivec3D): Bivec3D		131
+nim	right_complement	ngm/pga.html#right_complement,Vec4	proc right_complement(p: Vec4): Trivec3D		133
+nim	right_complement	ngm/pga.html#right_complement,Point3D	proc right_complement(p: Point3D): Trivec3D		134
+nim	right_complement	ngm/pga.html#right_complement,Bivec3D	proc right_complement(l: Bivec3D): Bivec3D		135
+nim	right_complement	ngm/pga.html#right_complement,Trivec3D	proc right_complement(g: Trivec3D): Vec4		136
+nim	★	ngm/pga.html#★,Vec4	proc ★(p: Vec4): Trivec3D		138
+nim	★	ngm/pga.html#★,Point3D	proc ★(p: Point3D): Trivec3D		139
+nim	★	ngm/pga.html#★,Bivec3D	proc ★(l: Bivec3D): Bivec3D		140
+nim	★	ngm/pga.html#★,Trivec3D	proc ★(g: Trivec3D): Vec4		141
+nim	★~	ngm/pga.html#★~,Vec4	proc ★~(p: Vec4): Trivec3D		143
+nim	★~	ngm/pga.html#★~,Point3D	proc ★~(p: Point3D): Trivec3D		144
+nim	★~	ngm/pga.html#★~,Bivec3D	proc ★~(l: Bivec3D): Bivec3D		145
+nim	★~	ngm/pga.html#★~,Trivec3D	proc ★~(g: Trivec3D): Vec4		146
+nim	wedge	ngm/pga.html#wedge,Vec3,Vec3	proc wedge(p, q: Vec3): Bivec2D		148
+nim	wedge	ngm/pga.html#wedge,Point2D,Point2D	proc wedge(p, q: Point2D): Bivec2D		163
+nim	wedge	ngm/pga.html#wedge,Vec4,Vec4	proc wedge(p, q: Vec4): Bivec3D		169
+nim	wedge	ngm/pga.html#wedge,Point3D,Point3D	proc wedge(p, q: Point3D): Bivec3D		193
+nim	wedge	ngm/pga.html#wedge,Bivec3D,Vec4	proc wedge(l: Bivec3D; p: Vec4): Trivec3D		202
+nim	wedge	ngm/pga.html#wedge,Bivec3D,Point3D	proc wedge(l: Bivec3D; p: Point3D): Trivec3D		209
+nim	antiwedge	ngm/pga.html#antiwedge,Trivec3D,Trivec3D	proc antiwedge(g, h: Trivec3D): Bivec3D		216
+nim	antiwedge	ngm/pga.html#antiwedge,Trivec3D,Bivec3D	proc antiwedge(g: Trivec3D; l: Bivec3D): Vec4		225
+nim	∧	ngm/pga.html#∧,,	proc ∧(p, q: Vec3 | Point2D): Bivec2D		232
+nim	∧	ngm/pga.html#∧,,_2	proc ∧(p, q: Vec4 | Point3D): Bivec3D		233
+nim	∧	ngm/pga.html#∧,Bivec3D,	proc ∧(l: Bivec3D; p: Vec4 | Point3D): Trivec3D		234
+nim	∨	ngm/pga.html#∨,Trivec3D,Trivec3D	proc ∨(g, h: Trivec3D): Bivec3D		236
+nim	∨	ngm/pga.html#∨,Trivec3D,Bivec3D	proc ∨(g: Trivec3D; l: Bivec3D): Vec4		237
+nim	oproject	ngm/pga.html#oproject,,Trivec3D	proc oproject(p: Point3D | Vec4; g: Trivec3D): Point3D		239
+nim	oproject	ngm/pga.html#oproject,,Bivec3D	proc oproject(p: Point3D | Vec4; l: Bivec3D): Point3D		240
+nim	oproject	ngm/pga.html#oproject,Bivec3D,Trivec3D	proc oproject(l: Bivec3D; g: Trivec3D): Bivec3D		241
+nim	cproject	ngm/pga.html#cproject,,Trivec3D	proc cproject(p: Point3D | Vec4; g: Trivec3D): Point3D		242
+nim	cproject	ngm/pga.html#cproject,,Bivec3D	proc cproject(p: Point3D | Vec4; l: Bivec3D): Point3D		243
+nim	cproject	ngm/pga.html#cproject,Bivec3D,Trivec3D	proc cproject(l: Bivec3D; g: Trivec3D): Bivec3D		244
+nimgrp	bulkdual	ngm/pga.html#bulk_dual-procs-all	proc		108
+nimgrp	wedge	ngm/pga.html#wedge-procs-all	proc		148
+nimgrp	∧	ngm/pga.html#∧-procs-all	proc		232
+nimgrp	antiwedge	ngm/pga.html#antiwedge-procs-all	proc		216
+nimgrp	cproject	ngm/pga.html#cproject-procs-all	proc		242
+nimgrp	weight	ngm/pga.html#weight-procs-all	proc		103
+nimgrp	★	ngm/pga.html#★-procs-all	proc		138
+nimgrp	weightdual	ngm/pga.html#weight_dual-procs-all	proc		113
+nimgrp	bulknorm	ngm/pga.html#bulk_norm-procs-all	proc		118
+nimgrp	rightcomplement	ngm/pga.html#right_complement-procs-all	proc		133
+nimgrp	★~	ngm/pga.html#★~-procs-all	proc		143
+nimgrp	∨	ngm/pga.html#∨-procs-all	proc		236
+nimgrp	bivec	ngm/pga.html#bivec-procs-all	proc		80
+nimgrp	bulk	ngm/pga.html#bulk-procs-all	proc		98
+nimgrp	trivec	ngm/pga.html#trivec-procs-all	proc		82
+nimgrp	weightnorm	ngm/pga.html#weight_norm-procs-all	proc		123
+nimgrp	attitude	ngm/pga.html#attitude-procs-all	proc		128
+nimgrp	oproject	ngm/pga.html#oproject-procs-all	proc		239
+heading	Basis Vectors	ngm/pga.html#basis-vectors	   Basis Vectors		0
+heading	PGA Elements	ngm/pga.html#pga-elements	   PGA Elements		0
+heading	Symbols Used	ngm/pga.html#symbols-used	   Symbols Used		0
+heading	List of Useful Expressions	ngm/pga.html#list-of-useful-expressions	   List of Useful Expressions		0

@@ -1,0 +1,69 @@
+nimTitle	quat	ngm/quat.html	module ngm/quat		0
+nim	Quat	ngm/quat.html#Quat	object Quat		8
+nim	QuatIdent	ngm/quat.html#QuatIdent	const QuatIdent		11
+nim	array->Quat	ngm/quat.html#array->Quat.c,array[,Real]	converter array->Quat(arr: array[4, Real]): Quat		15
+nim	`$`	ngm/quat.html#$,Quat	proc `$`(q: Quat): string		17
+nim	repr	ngm/quat.html#repr,Quat	proc repr(q: Quat): string		18
+nim	unpack	ngm/quat.html#unpack,Quat	proc unpack(q: Quat): (Real, Real, Real, Real)		20
+nim	quat	ngm/quat.html#quat,Real,Real,Real,Real	proc quat(x, y, z, w: Real): Quat		22
+nim	quat	ngm/quat.html#quat,Vec4	proc quat(v: Vec4): Quat		23
+nim	quat	ngm/quat.html#quat,Vec3,Vec3	proc quat(v, u: Vec3): Quat		25
+nim	quat	ngm/quat.html#quat,Vec3,Radians	proc quat(v: Vec3; α: Radians): Quat		42
+nim	vec3	ngm/quat.html#vec3,Quat	proc vec3(q: Quat): Vec3		46
+nim	mat	ngm/quat.html#mat,Quat	proc mat(q: Quat; pos = vec3()): Transform3D		48
+nim	mat3	ngm/quat.html#mat3,Quat	proc mat3(q: Quat): Mat3		58
+nim	mat4	ngm/quat.html#mat4,Quat	proc mat4(q: Quat): Mat4		61
+nim	`=~`	ngm/quat.html#=~,Quat,Quat	proc `=~`(q, p: Quat): bool		70
+nim	real	ngm/quat.html#real,Quat	proc real(q: Quat): Real		73
+nim	imag	ngm/quat.html#imag,Quat	proc imag(q: Quat): Vec3		74
+nim	imaginary	ngm/quat.html#imaginary,Quat	proc imaginary(q: Quat): Vec3		75
+nim	norm2	ngm/quat.html#norm2,Quat	proc norm2(q: Quat): Real		77
+nim	norm	ngm/quat.html#norm,Quat	proc norm(q: Quat): Real		78
+nim	mag	ngm/quat.html#mag,Quat	proc mag(q: Quat): Real		79
+nim	normalized	ngm/quat.html#normalized,Quat	proc normalized(q: Quat): Quat		81
+nim	normalize	ngm/quat.html#normalize,Quat	proc normalize(q: var Quat)		82
+nim	versor	ngm/quat.html#versor,Real,Real,Real,Real	proc versor(x, y, z, w: Real): Quat		84
+nim	versor	ngm/quat.html#versor	proc versor(q: Quat | Vec4): Quat		85
+nim	conjugate	ngm/quat.html#conjugate,Quat	proc conjugate(q: Quat): Quat		87
+nim	conj	ngm/quat.html#conj,Quat	proc conj(q: Quat): Quat		88
+nim	`-`	ngm/quat.html#-,Quat	proc `-`(q: Quat): Quat		90
+nim	`/`	ngm/quat.html#/,Quat,Real	proc `/`(q: Quat; s: Real): Quat		92
+nim	inverse	ngm/quat.html#inverse,Quat	proc inverse(q: Quat): Quat		94
+nim	inv	ngm/quat.html#inv,Quat	proc inv(q: Quat): Quat		97
+nim	`+`	ngm/quat.html#+,Quat,Quat	proc `+`(q, p: Quat): Quat		99
+nim	`-`	ngm/quat.html#-,Quat,Quat	proc `-`(q, p: Quat): Quat		100
+nim	`+=`	ngm/quat.html#+=,Quat,Quat	proc `+=`(q: var Quat; p: Quat)		102
+nim	`-=`	ngm/quat.html#-=,Quat,Quat	proc `-=`(q: var Quat; p: Quat)		103
+nim	`*`	ngm/quat.html#*,Quat,Real	proc `*`(q: Quat; s: Real): Quat		105
+nim	`*`	ngm/quat.html#*,Real,Quat	proc `*`(s: Real; q: Quat): Quat		106
+nim	`*`	ngm/quat.html#*,Quat,Quat	proc `*`(q, p: Quat): Quat		107
+nim	`/`	ngm/quat.html#/,Quat,Quat	proc `/`(q, p: Quat): Quat		113
+nim	`*=`	ngm/quat.html#*=,Quat,Real	proc `*=`(q: var Quat; s: Real)		115
+nim	`*=`	ngm/quat.html#*=,Quat,Quat	proc `*=`(q: var Quat; p: Quat)		116
+nim	`/=`	ngm/quat.html#/=,Quat,Quat	proc `/=`(q: var Quat; p: Quat)		117
+nim	`/=`	ngm/quat.html#/=,Quat,Real	proc `/=`(q: var Quat; s: Real)		118
+nim	dot	ngm/quat.html#dot,Quat,Quat	proc dot(q, p: Quat): Real		120
+nim	∙	ngm/quat.html#∙,Quat,Quat	proc ∙(q, p: Quat): Real		121
+nim	angle	ngm/quat.html#angle,Quat	proc angle(q: Quat): Real		123
+nim	axis	ngm/quat.html#axis,Quat	proc axis(q: Quat): Vec3		127
+nim	lerp	ngm/quat.html#lerp,Quat,Quat,Real	proc lerp(q, p: Quat; t: Real): Quat		135
+nim	lerpc	ngm/quat.html#lerpc,Quat,Quat,Real	proc lerpc(q, p: Quat; t: Real): Quat		140
+nim	slerp	ngm/quat.html#slerp,Quat,Quat,Real	proc slerp(q, p: Quat; t: Real): Quat		142
+nim	look	ngm/quat.html#look,Quat,Point3D	proc look(q: Quat; pos: Point3D): Mat4		157
+nim	look	ngm/quat.html#look,Vec3,Vec3	proc look(dir, up: Vec3): Quat		162
+nim	rotated	ngm/quat.html#rotated,Vec3,Quat	proc rotated(v: Vec3; q: Quat): Vec3		171
+nim	rotated	ngm/quat.html#rotated,Transform3D,Quat	proc rotated(m: Transform3D; q: Quat): Transform3D		177
+nim	rotated	ngm/quat.html#rotated,Mat4,Quat	proc rotated(m: Mat4; q: Quat): Mat4		180
+nim	rotate	ngm/quat.html#rotate,Vec3,Quat	proc rotate(v: var Vec3; q: Quat)		183
+nim	rotate	ngm/quat.html#rotate,Transform3D,Quat	proc rotate(m: var Transform3D; q: Quat)		184
+nim	rotate	ngm/quat.html#rotate,Mat4,Quat	proc rotate(m: var Mat4; q: Quat)		185
+nimgrp	-	ngm/quat.html#--procs-all	proc		90
+nimgrp	/	ngm/quat.html#/-procs-all	proc		92
+nimgrp	*	ngm/quat.html#*-procs-all	proc		105
+nimgrp	*=	ngm/quat.html#*=-procs-all	proc		115
+nimgrp	rotated	ngm/quat.html#rotated-procs-all	proc		171
+nimgrp	quat	ngm/quat.html#quat-procs-all	proc		22
+nimgrp	look	ngm/quat.html#look-procs-all	proc		157
+nimgrp	versor	ngm/quat.html#versor-procs-all	proc		84
+nimgrp	/=	ngm/quat.html#/=-procs-all	proc		117
+nimgrp	rotate	ngm/quat.html#rotate-procs-all	proc		183
