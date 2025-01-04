@@ -1,6 +1,2 @@
-nimcache/
-testresults/
-build/
-
-TODO
-tests/main
+*
+!docs/
