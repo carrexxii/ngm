@@ -1,0 +1,9 @@
+*.html -diff -merge
+*.idx  -diff -merge
+*.js   -diff -merge
+*.css  -diff -merge
+
+*.html linguist-generated=true
+*.idx  linguist-generated=true
+*.js   linguist-generated=true
+*.css  linguist-generated=true

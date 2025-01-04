@@ -3,6 +3,7 @@ import std/[os, strformat, strutils, sequtils, enumerate]
 let
     src_dir   = "./src"
     lib_dir   = "./lib"
+    doc_dir   = "./docs"
     build_dir = "./build"
     test_dir  = "./tests"
     deps: seq[tuple[src, dst, tag: string; cmds: seq[string]]] = @[
@@ -51,14 +52,13 @@ task restore, "Fetch and build dependencies":
             for cmd in dep.cmds:
                 run cmd
 
+task docs, "Build the project's docs":
+    let git_hash = (gorge_ex "git rev-parse HEAD").output
+    run &"nim doc --project --index:on --git.url:https://github.com/carrexxii/ngm --git.commit:{git_hash} --outdir:{doc_dir} ngm.nim"
+    run &"cp {doc_dir}/theindex.html {doc_dir}/index.html"
+
 task test, "Run the project's tests":
     run &"nim c -r -p:. {test_dir}/main.nim"
-    # --hints:off
-    # let files = (list_files test_dir).filter_it(it.ends_with ".nim")
-    # for file in files:
-    #     echo &"Running tests for '{file}'"
-    #     run &"nim c -r --hints:off -p:. {file}"
-    # run &"testament pattern \"{test_dir}/*.nim\""
 
 task info, "Print out information about the project":
     echo green &"NGM - Nim Game Maths"
