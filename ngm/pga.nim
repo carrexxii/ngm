@@ -77,6 +77,16 @@ type
 
 {.push inline.}
 
+func `$`*(l: Bivec2D): string = &"({l.x}, {l.y}, {l.w})"
+
+func `$`*(l: Bivec3D ): string = &"({l.v.x}, {l.v.y}, {l.v.z}, {l.m.x}, {l.m.y}, {l.m.z})"
+func `$`*(g: Trivec3D): string = &"({g.x}, {g.y}, {g.z}, {g.w})"
+
+func repr*(l: Bivec2D): string = &"Bivec2D (x: {l.x}e01, y: {l.y}e20, w: {l.w}e12)"
+
+func repr*(l: Bivec3D ): string = &"Bivec3D (v: (x: {l.v.x}e01, y: {l.v.y}e02, z: {l.v.z}e03), m: (x: {l.m.x}e23, y: {l.m.y}e31, z: {l.m.z}e12))"
+func repr*(g: Trivec3D): string = &"Trivec3D (x: {g.x}e023, y: {g.y}e031, z: {g.z}e012, w: {g.w}e321)"
+
 func bivec*(x, y, w: Real): Bivec2D                = Bivec2D(x: x, y: y, w: w)
 func bivec*(vx, vy, vz, mx, my, mz: Real): Bivec3D = Bivec3D(v: [vx, vy, vz], m: [mx, my, mz])
 func trivec*(x, y, z, w: Real): Trivec3D           = Trivec3D(x: x, y: y, z: z, w: w)
@@ -107,12 +117,12 @@ func weight*(g: Trivec3D): Trivec3D = trivec g.x, g.y, g.z, 0
 
 func bulk_dual*(p: Vec4    ): Trivec3D = trivec p.x, p.y, p.z, 0
 func bulk_dual*(p: Point3D ): Trivec3D = trivec p.x, p.y, p.z, 0
-func bulk_dual*(l: Bivec3D ): BiVec3D  = bivec Vec3Zero, -l.m
+func bulk_dual*(l: Bivec3D ): BiVec3D  = bivec -l.m, Vec3Zero
 func bulk_dual*(g: Trivec3D): Vec4     = [Real 0, 0, 0, -g.w]
 
 func weight_dual*(p: Vec4    ): Trivec3D = trivec Real 0, 0, 0, p.w
 func weight_dual*(p: Point3D ): Trivec3D = trivec Real 0, 0, 0, 1
-func weight_dual*(l: Bivec3D ): BiVec3D  = bivec -l.v, Vec3Zero
+func weight_dual*(l: Bivec3D ): BiVec3D  = bivec Vec3Zero, -l.v
 func weight_dual*(g: Trivec3D): Vec4     = [-g.x, -g.y, -g.z, 0]
 
 func bulk_norm*(p: Vec4    ): Real = norm p.xyz

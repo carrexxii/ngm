@@ -42,3 +42,6 @@ suite "Quaternions":
 
 suite "Dual Quaternions":
     include dquat
+
+suite "PGA":
+    include pga

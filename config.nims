@@ -87,4 +87,3 @@ task info, "Print out information about the project":
 
     echo ""
     run "cloc --vcs=git"
-
