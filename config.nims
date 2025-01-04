@@ -57,6 +57,18 @@ task docs, "Build the project's docs":
     run &"nim doc --project --index:on --git.url:https://github.com/carrexxii/ngm --git.commit:{git_hash} --outdir:{doc_dir} ngm.nim"
     run &"cp {doc_dir}/theindex.html {doc_dir}/index.html"
 
+task push, "Commit to docs branch":
+    try:
+        run &"git stash"
+        run &"git checkout docs"
+        run &"git add {doc_dir}/**"
+        run &"git commit -m \".\""
+    except OsError:
+        discard
+    finally:
+        run &"git checkout master"
+        run &"git stash pop"
+
 task test, "Run the project's tests":
     run &"nim c -r -p:. {test_dir}/main.nim"
 
