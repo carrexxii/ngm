@@ -1,7 +1,8 @@
 nimcache/
 testresults/
 build/
-docs/
+docs/**
+!docs/*.md
 
 TODO
 tests/main

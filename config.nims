@@ -53,6 +53,9 @@ task restore, "Fetch and build dependencies":
                 run cmd
 
 task docs, "Build the project's docs":
+    run &"nim md2html --index:only --outdir:{doc_dir} {doc_dir}/*.md"
+    run &"nim md2html --outdir:{doc_dir} {doc_dir}/*.md"
+
     let git_hash = (gorge_ex "git rev-parse HEAD").output
     run &"nim doc --project --index:on --git.url:https://github.com/carrexxii/ngm --git.commit:{git_hash} --outdir:{doc_dir} ngm.nim"
     run &"cp {doc_dir}/theindex.html {doc_dir}/index.html"
