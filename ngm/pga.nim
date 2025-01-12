@@ -99,8 +99,8 @@ func `-`*(g: Trivec3D): Trivec3D = trivec -g.x, -g.y, -g.z, -g.w
 
 when defined Ngm2D:
     type
-        Bivec*      = Bivec2
-        Antiscalar* = Antiscalar2
+        Bivec*      = Bivec2D
+        Antiscalar* = Antiscalar2D
 elif defined Ngm3D:
     type
         Bivec*      = Bivec3D
@@ -205,14 +205,14 @@ func wedge*(p, q: Point2D): Bivec2D =
 
 func wedge*(p: Vec3; l: Bivec2D): Vec3 =
     ## $$
-    ## \displaylines{\begin{flalign}
+    ## \begin{aligned}
     ## p \wedge l &= (p_xe_1 + p_ye_2 + p_we_0) \wedge (l_xe_{01} + l_ye_{20} + l_we_{12}) \\
     ##            &= p_xl_xe_1e_{01} + p_xl_ye_1e_{20} + p_xl_we_1e_{12} + \\
     ##       &\qquad p_yl_xe_2e_{01} + p_yl_ye_2e_{20} + p_yl_we_2e_{12} + \\
     ##       &\qquad p_wl_xe_0e_{01} + p_wl_ye_0e_{20} + p_wl_we_0e_{12} \\
     ##            &= -p_xl_xe_0 + p_xl_ye_{120} + p_xl_we_2 + p_yl_xe_{201} + p_yl_ye_0 - p_yl_we_1 + p_wl_we_{012} \\
     ##            &= -p_yl_we_1 + p_xl_we_2 + (p_yl_y - p_xl_x)e_0 + (p_xl_y + p_yl_x + p_wl_w)e_{012}
-    ## \end{flalign}}
+    ## \end{aligned}
     ## $$
     [-p.y*l.w,
       p.x*l.w,
@@ -220,14 +220,14 @@ func wedge*(p: Vec3; l: Bivec2D): Vec3 =
 
 func wedge*(p: Point2D; l: Bivec2D): Point2D =
     ## $$
-    ## \displaylines{\begin{flalign}
+    ## \begin{aligned}
     ## p \wedge l &= (p_xe_1 + p_ye_2 + p_we_0) \wedge (l_xe_{01} + l_ye_{20} + l_we_{12}) \\
     ##            &= p_xl_xe_1e_{01} + p_xl_ye_1e_{20} + p_xl_we_1e_{12} + \\
     ##       &\qquad p_yl_xe_2e_{01} + p_yl_ye_2e_{20} + p_yl_we_2e_{12} + \\
     ##       &\qquad p_wl_xe_0e_{01} + p_wl_ye_0e_{20} + p_wl_we_0e_{12} \\
     ##            &= -p_xl_xe_0 + p_xl_ye_{120} + p_xl_we_2 + p_yl_xe_{201} + p_yl_ye_0 - p_yl_we_1 + p_wl_we_{012} \\
     ##            &= -p_yl_we_1 + p_xl_we_2 + (p_yl_y - p_xl_x)e_0 + (p_xl_y + p_yl_x + p_wl_w)e_{012}
-    ## \end{flalign}}
+    ## \end{aligned}
     ## $$
     let w = p.y*l.y - p.x*l.x
     point -p.y*l.w / w,

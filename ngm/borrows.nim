@@ -16,11 +16,15 @@ template borrow_additive*(T: typedesc) =
     func `+=`*(a: var T; b: T) {.borrow.}
     func `-=`*(a: var T; b: T) {.borrow.}
 
-template borrow_multiplicative*(T: typedesc; base = distinct_base T) =
-    func `*`*(a: T; b: base): T {.borrow.}
-    func `/`*(a: T; b: base): T {.borrow.}
-    func `*`*(a: base; b: T): T {.borrow.}
-    when base is SomeInteger:
+template borrow_multiplicative*(T: typedesc) =
+    func `*`*(a: T; b: distinct_base T): T {.borrow.}
+    func `/`*(a: T; b: distinct_base T): T {.borrow.}
+    func `*`*(a: distinct_base T; b: T): T {.borrow.}
+
+    func `*=`*(a: var T; b: distinct_base T) {.borrow.}
+    func `/=`*(a: var T; b: distinct_base T) {.borrow.}
+
+    when (distinct_base T) is SomeInteger:
         func `div`*(a: T; b: int): T {.borrow.}
         func `mod`*(a: T; b: int): T {.borrow.}
 

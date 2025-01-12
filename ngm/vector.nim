@@ -31,13 +31,13 @@ func repr*(v: Vec2): string = &"Vec2 (x: {v[0]}, y: {v[1]})"
 func repr*(v: Vec3): string = &"Vec3 (x: {v[0]}, y: {v[1]}, z: {v[2]})"
 func repr*(v: Vec4): string = &"Vec4 (x: {v[0]}, y: {v[1]}, z: {v[2]}, w: {v[3]})"
 
-func vec2*(x: SomeNumber = 0, y: SomeNumber = 0): Vec2                                       = [Real x, Real y]
-func vec3*(x: SomeNumber = 0, y: SomeNumber = 0, z: SomeNumber = 0): Vec3                    = [Real x, Real y, Real z]
-func vec4*(x: SomeNumber = 0, y: SomeNumber = 0, z: SomeNumber = 0, w: SomeNumber = 0): Vec4 = [Real x, Real y, Real z, Real w]
+func vec2*(x, y: SomeNumber = 0): Vec2       = [Real x, Real y]
+func vec3*(x, y, z: SomeNumber = 0): Vec3    = [Real x, Real y, Real z]
+func vec4*(x, y, z, w: SomeNumber = 0): Vec4 = [Real x, Real y, Real z, Real w]
 
-func vec*(x: SomeNumber, y: SomeNumber): Vec2                               = vec2 x, y
-func vec*(x: SomeNumber, y: SomeNumber, z: SomeNumber): Vec3                = vec3 x, y, z
-func vec*(x: SomeNumber, y: SomeNumber, z: SomeNumber, w: SomeNumber): Vec4 = vec4 x, y, z, w
+func vec*(x, y: SomeNumber): Vec2       = vec2 x, y
+func vec*(x, y, z: SomeNumber): Vec3    = vec3 x, y, z
+func vec*(x, y, z, w: SomeNumber): Vec4 = vec4 x, y, z, w
 
 func to_inds(fields: string): seq[int] =
     result = fields.map_it VectorFields.find it
@@ -57,6 +57,7 @@ macro `.`*(v: AnyVec; fields: untyped): untyped =
             result.add quote do:
                 `v`[`i`]
 
+# TODO: nnkIfExpr
 macro `.=`*(v: AnyVec; fields, rhs: untyped): untyped =
     let (lhs_count, lhs_inds) = (fields.repr.len, to_inds fields.repr)
     let (rhs_count, rhs_inds) = case rhs.kind
@@ -199,8 +200,8 @@ func rotated*(v: Vec3; α: Radians; axis: Vec3): Vec3 =
     let sina = sin float32 α
     v*cosa + (axis × v)*sina + axis*(axis ∙ v)*(1 - cosa)
 
-func rotate*(v: var Vec2; α: Radians): Vec2             = v = rotated(v, α)
-func rotate*(v: var Vec3; α: Radians; axis: Vec3): Vec3 = v = rotated(v, α, axis)
+func rotate*(v: var Vec2; α: Radians)             = v = rotated(v, α)
+func rotate*(v: var Vec3; α: Radians; axis: Vec3) = v = rotated(v, α, axis)
 
 func reflected*[T: Vec2 | Vec3](v, n: T): T   = v - 2*(v∙n)*n
 func reflect*[T: Vec2 | Vec3](v: var T; n: T) = v = reflected(v, n)

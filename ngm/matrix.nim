@@ -59,13 +59,14 @@ func tform*(v1, v2, v3, v4: Vec3): Transform3D = [v1, v2, v3, v4]
 
 func matrix_size(T: string): (int, int) =
     case T
-    of $Mat2       : result = (2, 2)
-    of $Mat3       : result = (3, 3)
-    of $Mat4       : result = (4, 4)
-    of $Transform2D: result = (2, 3)
-    of $Transform3D: result = (3, 4)
+    of $Mat2       : (2, 2)
+    of $Mat3       : (3, 3)
+    of $Mat4       : (4, 4)
+    of $Transform2D: (2, 3)
+    of $Transform3D: (3, 4)
     else:
         assert false, T
+        (0, 0)
 
 macro expand_alias*(m: AnyMat): untyped =
     result = new_nim_node nnkStmtList

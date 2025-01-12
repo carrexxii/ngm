@@ -5,11 +5,11 @@ import std/math, common, util, quat, dquat
 func lerp*(a, b, t: Real): Real =
     a + t*(b - a)
 
-func step*(x: Real; r = (SomeNumber 0)..(SomeNumber 1)): Real =
-    if x < Real r.b:
-        Real r.a
+func step*(x: Real; r = (Real 0)..(Real 1)): Real =
+    if x < r.b:
+        r.a
     else:
-        Real r.b
+        r.b
 
 func ease_in*(x: Real; exp = 2): Real  = x^exp
 func ease_out*(x: Real; exp = 2): Real = 1 - (1 - x)^exp

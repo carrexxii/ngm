@@ -1,5 +1,6 @@
 import std/math, common, borrows
 from std/strutils import parse_float
+export pow, `^`
 
 type
     Degrees* = distinct Real
@@ -37,5 +38,8 @@ func deg*(a: Radians): Degrees = degrees a
 func sin*(α: Radians): Real = sin Real α
 func cos*(α: Radians): Real = cos Real α
 func tan*(α: Radians): Real = tan Real α
+func csc*(α: Radians): Real = csc Real α
+func sec*(α: Radians): Real = sec Real α
+func cot*(α: Radians): Real = cot Real α
 
 {.pop.}

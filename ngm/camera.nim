@@ -2,192 +2,180 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import common, util, vector, matrix
+import common, util, vector, matrix, interpolation
 
 type
-    CameraProjection* = enum
-        cpOrthogonal
-        cpPerspective
+    ZoomState* = enum
+        zsNone
+        zsIn
+        zsOut
 
-    CameraDirection* = enum
-        cdNone
-        cdForwards
-        cdBackwards
-        cdUp
-        cdDown
-        cdLeft
-        cdRight
-
-type
     Camera2D* = object
-        speed*: float32 = 10.0'f32
-        angle*: float32 = 0.0'f32
-        zoom* : float32 = 1.0'f32
-        pos*  : Vec3    = vec(0, 0, 0)
-        view* : Mat4x4  = Mat4x4Ident
-        proj* : Mat4x4  = Mat4x4Ident
+        pos*       : Vec2
+        dir*       : Vec2
+        rot*       : Radians
+        zoom*      : Real
+        zoom_max*  : Real
+        zoom_min*  : Real
+        zoom_scale*: Real
+        pan_speed* : Real
+        rot_speed* : Radians
+        zoom_speed*: Real
+        zoom_state*: ZoomState
+        view_w*    : Real
+        view_h*    : Real
+        view*      : Mat4
+        proj*      : Mat4
 
+    ProjectionKind* = enum
+        pkPerspective
+        pkOrthogonal
     Camera3D* = object
-        proj_kind*: CameraProjection
-        pan_speed*: float32 = 0.1'f32
-        rot_speed*: float32 = 0.1'f32
-        pos*      : Vec3 = vec( 1,  1,  0)
-        dir*      : Vec3 = vec(-1, -1,  0)
-        up*       : Vec3 = vec( 0,  0, -1)
-        znear*    : float32
-        zfar*     : float32
-        view*     : Mat4x4 = Mat4x4Ident
-        proj*     : Mat4x4 = Mat4x4Ident
-        proj_inv* : Mat4x4 = Mat4x4Ident
+        pos*      : Vec3    = vec( 1,  1,  0)
+        pan_speed*: Real    = 0.1
+        dir*      : Vec3    = vec(-1, -1,  0)
+        rot_speed*: Radians = 0.1'rad
+        up*       : Vec3    = vec( 0,  0, -1)
+        proj_kind*: ProjectionKind
+        znear*    : Real
+        zfar*     : Real
+        view*     : Mat4 = Mat4Ident
+        proj*     : Mat4 = Mat4Ident
+        proj_inv* : Mat4 = Mat4Ident
 
 func right*(cam: Camera3D): Vec3 {.inline.} = normalized (cam.dir × cam.up)
 func up*(cam: Camera3D): Vec3    {.inline.} = normalized (cam.right × (cam.dir - cam.pos))
 
-#[ -------------------------------------------------------------------- ]#
-
-using
-    dst : ptr Mat4x4
-    proj: ptr Mat4x4
-
-{.push header: CglmDir / "cam.h".}
-proc glm_frustum*(left, right, bottom, top, znear, zfar: cfloat; dst) {.importc: "glm_frustum"   .}
-proc glm_lookat*(eye, centre, up: ptr Vec3; dst)                      {.importc: "glm_lookat"    .}
-proc glm_look*(eye, dir, up: ptr Vec3; dst)                           {.importc: "glm_look"      .}
-proc glm_look_anyup*(eye, dir: ptr Vec3; dst)                         {.importc: "glm_look_anyup".}
-
-proc glm_ortho*(left, right, bottom, top, znear, zfar: cfloat; dst)    {.importc: "glm_ortho"          .}
-proc glm_ortho_aabb*(box: ptr array[2, Vec3]; dst)                     {.importc: "glm_ortho_aabb"     .}
-proc glm_ortho_aabb_p*(box: ptr array[2, Vec3]; padding: cfloat; dst)  {.importc: "glm_ortho_aabb_p"   .}
-proc glm_ortho_aabb_pz*(box: ptr array[2, Vec3]; padding: cfloat; dst) {.importc: "glm_ortho_aabb_pz"  .}
-proc glm_ortho_default*(aspect: cfloat; dst)                           {.importc: "glm_ortho_default"  .}
-proc glm_ortho_default_s*(aspect, size: cfloat; dst)                   {.importc: "glm_ortho_default_s".}
-
-proc glm_perspective*(yfov, aspect, znear, zfar: cfloat; dst)                   {.importc: "glm_perspective"        .}
-proc glm_perspective_default*(aspect: cfloat; dst)                              {.importc: "glm_perspective_default".}
-proc glm_perspective_resize*(aspect: cfloat; proj)                              {.importc: "glm_perspective_resize" .}
-proc glm_persp_decomp*(proj; znear, zfar, top, bottom, left, right: ptr cfloat) {.importc: "glm_persp_decomp"       .}
-proc glm_persp_decompv*(proj; dst: ptr array[6, cfloat])                        {.importc: "glm_persp_decompv"      .}
-proc glm_persp_decomp_x*(proj; left, right: ptr cfloat)                         {.importc: "glm_persp_decomp_x"     .}
-proc glm_persp_decomp_y*(proj; top, bottom: ptr cfloat)                         {.importc: "glm_persp_decomp_y"     .}
-proc glm_persp_decomp_z*(proj; near, far: ptr cfloat)                           {.importc: "glm_persp_decomp_z"     .}
-proc glm_persp_decomp_far*(proj; zfar: ptr cfloat)                              {.importc: "glm_persp_decomp_far"   .}
-proc glm_persp_decomp_near*(proj; znear: ptr cfloat)                            {.importc: "glm_persp_decomp_near"  .}
-proc glm_persp_fovy*(proj): cfloat                                              {.importc: "glm_persp_fovy"         .}
-proc glm_persp_aspect*(proj): cfloat                                            {.importc: "glm_persp_aspect"       .}
-proc glm_persp_sizes*(proj; yfov: cfloat; dst: ptr Vec4)                        {.importc: "glm_persp_sizes"        .}
-{.pop.}
-
-{.push inline.}
-
-proc orthogonal*(left, right, bottom, top, znear, zfar: float32): Mat4x4 =
-    glm_ortho left, right, bottom, top, znear, zfar, result
-
-proc orthogonal_default*(aspect: float32 = 16/9): Mat4x4 =
-    glm_ortho_default aspect, result
-
-proc perspective*(yfov, aspect, znear, zfar: float32): Mat4x4 =
-    glm_perspective cfloat yfov, cfloat aspect, cfloat znear, cfloat zfar, result.addr
-
-proc perspective_default*(aspect: float32 = 16/9): Mat4x4 =
-    glm_perspective_default cfloat aspect, result.addr
-
-{.pop.}
-
-#[ -------------------------------------------------------------------- ]#
-
-{.push inline.}
-
-func look*(cam: var Camera3D) =
-    glm_look cam.pos, cam.dir, cam.up, cam.view
-
-func set_orthogonal*(cam: var (Camera2D | Camera3D); aspect: float32) =
-    cam.proj = orthogonal_default aspect
-    when cam is Camera3D:
-        cam.proj_kind = cpOrthogonal
-        cam.proj_inv  = inv cam.proj
-
-func set_orthogonal*(cam: var (Camera2D | Camera3D); l, r, b, t, zn, zf: float32) =
-    cam.proj = orthogonal(l, r, b, t, zn, zf)
-    when cam is Camera3D:
-        cam.proj_kind = cpOrthogonal
-        cam.proj_inv  = inv cam.proj
-
-func set_orthogonal*(cam: var Camera2D; w, h: SomeNumber) =
-    let w = (float32 w) / 2 / cam.zoom
-    let h = (float32 h) / 2 / cam.zoom
-    cam.set_orthogonal -w, w, -h, h, -1, 1
-
-func set_perspective*(cam: var (Camera2D | Camera3D); fov, aspect, znear, zfar: float32) =
-    cam.proj  = perspective(fov, aspect, znear, zfar)
-    cam.znear = znear
-    cam.zfar  = zfar
-    when cam is Camera3D:
-        cam.proj_kind = cpPerspective
-        cam.proj_inv  = inv cam.proj
-
-func update*(cam: var Camera2D) =
-    cam.view[3].x = cam.pos.x
-    cam.view[3].y = cam.pos.y
-    cam.view[3].z = cam.pos.z
-
-func update*(cam: var Camera3D) =
-    if cam.proj_kind == cpPerspective:
-        look cam
-
-{.pop.}
-
-func yaw*(cam: var Camera3D; angle: Radians)   {.inline.} = cam.dir.rotate cam.up   , angle
-func pitch*(cam: var Camera3D; angle: Radians) {.inline.} = cam.dir.rotate cam.right, angle
-func roll*(cam: var Camera3D; angle: Radians)  {.inline.} = cam.up.rotate  cam.dir  , angle
-
-func move*(cam: var Camera3D; dir: CameraDirection) =
-    let right = cam.right
-    let up    = normalized (right × (cam.dir - cam.pos))
-    case dir
-    of cdRight    : cam.pos += right*cam.pan_speed
-    of cdLeft     : cam.pos -= right*cam.pan_speed
-    of cdUp       : cam.pos += up*cam.pan_speed
-    of cdDown     : cam.pos -= up*cam.pan_speed
-    of cdForwards : cam.pos += cam.dir*cam.pan_speed
-    of cdBackwards: cam.pos -= cam.dir*cam.pan_speed
+func orthogonal*(l, r, b, t, n, f: Real; zero_to_one = true): Mat4 =
+    ## Orthogonal projection matrix with depth clip space \[0..1\]
+    ## by default or \[-1..1\] with `zero_to_one = false`.
+    if zero_to_one:
+        [[2/(r - l)       , 0               , 0         , 0],
+         [0               , 2/(t - b)       , 0         , 0],
+         [0               , 0               , -1/(f - n), 0],
+         [-(r + l)/(r - l), -(t + b)/(t - b), -n/(f - n), 1]]
     else:
-        discard
+        [[2/(r - l)       , 0               , 0               , 0],
+         [0               , 2/(t - b)       , 0               , 0],
+         [0               , 0               , -2/(f - n)      , 0],
+         [-(r + l)/(r - l), -(t + b)/(t - b), -(f + n)/(f - n), 1]]
 
-# func move*(cam: var Camera2D; dir: CameraDirection; dt: float) =
-#     case dir
-#     of cdNone: return
-#     of cdUp   : cam.pos.y -= cam.speed * dt
-#     of cdDown : cam.pos.y += cam.speed * dt
-#     of cdLeft : cam.pos.x += cam.speed * dt
-#     of cdRight: cam.pos.x -= cam.speed * dt
-#     else: assert false, "Zooming"
+func orthogonal*(w, h: Real; zero_to_one = true): Mat4 =
+    ## Symmetrical orthogonal projection matrix
+    if zero_to_one:
+        [[2/w, 0  ,  0  , 0],
+         [0  , 2/h,  0  , 0],
+         [0  , 0  , -0.5, 0],
+         [0  , 0  ,  0.5, 1]]
+    else:
+        [[1/w, 0  ,  0, 0],
+         [0  , 1/h,  0, 0],
+         [0  , 0  , -1, 0],
+         [0  , 0  ,  0, 1]]
 
-# func move*(cam: var Camera3D; dir: CameraDirection) =
-#     case dir
-#     of cdNone: discard
-#     of cdForwards, cdBackwards:
-#         var fwd = cam.dir
-#         if cam.proj_kind == cpOrthogonal:
-#             fwd.y = 0
-#             normalize fwd
+func perspective*(l, r, b, t, n, f: Real; zero_to_one = true): Mat4 =
+    ## Perspective projection frustum
+    ## If `zero_to_one = false`, a clip space of \[-1..1\] is used.
+    ##
+    ## `f` may be `Inf` for a far plane of \[n, ∞\]
+    if f == Inf:
+        let m32 = if zero_to_one: -n else: -2*n
+        [[2*n*(r - l)    , 0              ,  0  ,  0],
+         [0              , 2*n*(t - b)    ,  0  ,  0],
+         [(r + l)/(r - l), (t + b)/(t - b), -1  , -1],
+         [0              , 0              ,  m32,  0]]
+    else:
+        let m22 = if zero_to_one: -f/(f - n)   else: -(f + n)/(f - n)
+        let m32 = if zero_to_one: -f*n/(f - n) else: -2*f*n/(f - n)
+        [[2*n/(r - l)    , 0              , 0  ,  0],
+         [0              , 2*n/(t - b)    , 0  ,  0],
+         [(r + l)/(r - l), (t + b)/(t - b), m22, -1],
+         [0              , 0              , m32,  0]]
 
-#         fwd *= (if dir == cdForwards: cam.pan_speed else: -cam.pan_speed)
-#         cam.pos    += fwd
-#         cam.target += fwd
-#     of cdUp, cdDown:
-#         let dist = cam.up * (if dir == cdUp: cam.pan_speed else: -cam.pan_speed)
-#         cam.pos    += dist
-#         cam.target += dist
-#     of cdLeft, cdRight:
-#         var right = cam.right
-#         if cam.proj_kind == cpOrthogonal:
-#             right.y = 0
-#             normalize right
+func perspective*(ar: Real; fov: Radians; n, f: Real; hfov = true; zero_to_one = true): Mat4 =
+    ## Perspective projection matrix using a symmetrical horizontal FoV with
+    ## `hfov = true`or a symmetrical vertical FoV with `hfov = false`.
+    ##
+    ## If `zero_to_one = false`, a clip space of \[-1..1\] is used.
+    ##
+    ## `f` may be `Inf` for a far plane of \[n, ∞\].
+    let c   = cot(fov / 2)
+    let m11 = if hfov: c    else: ar*c
+    let m22 = if hfov: ar*c else: c
+    if f == Inf:
+        [[m11, 0  ,  0,  0],
+         [0  , m22,  0,  0],
+         [0  , 0  , -1, -1],
+         [0  , 0  , -n,  0]]
+    else:
+        let dr = -f/(f - n)
+        # -(f + n)/(f - n)
+        # -2*f*n/(f - n)
+        [[m11, 0  , 0   ,  0],
+         [0  , m22, 0   ,  0],
+         [0  , 0  , dr  , -1],
+         [0  , 0  , n*dr,  0]]
 
-#         right *= (if dir == cdRight: cam.pan_speed else: -cam.pan_speed)
-#         cam.pos    += right
-#         cam.target += right
+import std/math
+func update*(cam: var Camera2D; dt: Real) =
+    if cam.zoom_state != zsNone:
+        cam.zoom += cam.zoom_speed*(if cam.zoom_state == zsIn: dt else: -dt)
+        cam.zoom = cam.zoom.clamp(0, 1)
+        let zoom = lerp(cam.zoom_min, cam.zoom_max, ease_in cam.zoom)
+        cam.proj = orthogonal(cam.view_w / zoom, cam.view_h / zoom)
 
-# func move*(cam: var Camera3D; mouse_delta: Vec2; mouse_sensitivity = DefaultMouseSensitivity) =
-#     cam.yaw   Radians (mouse_delta.x * mouse_sensitivity)
-#     cam.pitch Radians (mouse_delta.y * mouse_sensitivity)
+    let l = lerp(cam.zoom_scale, 1/cam.zoom_scale, cam.zoom)
+    cam.pos += dt * cam.pan_speed*l * normalized cam.dir
+    let
+        x = cam.pos.x
+        y = cam.pos.y
+        c = cos cam.rot
+        s = sin cam.rot
+    cam.view = [[c, -s, 0, 0],
+                [s,  c, 0, 0],
+                [0,  0, 1, 0],
+                [x,  y, 0, 1]]
+
+{.push inline.}
+
+func move*(cam: var Camera2D; dir: Vec2) =
+    cam.dir += dir
+
+func yaw*(cam: var Camera3D; α: Radians)   = cam.dir.rotate α, cam.up
+func pitch*(cam: var Camera3D; α: Radians) = cam.dir.rotate α, cam.right
+func roll*(cam: var Camera3D; α: Radians)  = cam.up.rotate  α, cam.dir
+
+func create_camera2d*(pos        = vec(0, 0);
+                      dir        = vec(0, 0);
+                      rot        = 0.0'rad;
+                      zoom       = 0.5;
+                      zoom_max   = 3000.0;
+                      zoom_min   = 10.0;
+                      zoom_scale = 5.0;
+                      pan_speed  = 3.0;
+                      rot_speed  = 1.0'rad;
+                      zoom_speed = 1.0;
+                      view_w     = 1920.0;
+                      view_h     = 1080.0
+                      ): Camera2D =
+    result = Camera2D(
+        pos       : pos,
+        dir       : dir,
+        rot       : rot,
+        zoom      : zoom,
+        zoom_max  : zoom_max,
+        zoom_min  : zoom_min,
+        zoom_scale: zoom_scale,
+        pan_speed : pan_speed,
+        rot_speed : rot_speed,
+        zoom_speed: zoom_speed,
+        zoom_state: zsIn,
+        view_w    : view_w,
+        view_h    : view_h,
+        view      : Mat4Ident,
+        proj      : Mat4Ident,
+    )
+    result.update 0
+    result.zoom_state = zsNone
+
+{.pop.}
