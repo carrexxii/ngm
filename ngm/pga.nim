@@ -2,12 +2,17 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
+## Projective Geometric Algebra
+## ============================
 ##
 ## [Projective Geometric Algebra Notes](../Projective Geometric Algebra Notes.html)
 ##
-## Note: Unless both 2D and 3D methods/elements are provided, assume it is for 3D PGA.
+## .. Note::
+##   This uses the Lengyel-style of PGA and not the more common dual version.
+##   Unless both 2D and 3D methods/elements are provided, assume it is for 3D PGA.
 ##
-## ### PGA Elements
+## PGA Elements
+## ------------
 ## | Element             | Equivalent          | Grade | Equation                                                                                                                                                                                                               |
 ## | ---                 | ---                 | ---   | ---                                                                                                                                                                                                                    |
 ## | Scalar / Antiscalar | Magnitude           | 0 / 4 | $$\\mathbf{z} = x\\mathbf{1} + y𝟙 \\\\ \\text{or} \\\\ \\quad\\mathbf{z} = x + ye_{0123}$$                                                                                                                             |
@@ -17,17 +22,19 @@
 ## | Motor               | Dual Quaternion     | N/a   | $$\\begin{aligned}\\mathbf{Q} &= Q_v + Q_m \\\\ \\mathbf{Q} &= Q_{vx}e_{01} + Q_{vy}e_{02} + Q_{vz}e_{03} + Q_{vw}e_{0123} + \\\\ &\\qquad Q_{mx}e_{23} + Q_{my}e_{31} + Q_{mz}e_{12} + Q_{mw}e_{0123}\\end{aligned}$$ |
 ## | Flector             | Reflection Operator | N/a   | $$\\begin{aligned}\\mathbf{F} &= F_p + F_g \\\\ \\mathbf{F} &= F_{px}e_1 + F_{py}e_2 + F_{pz}e_3 + F_{pw}e_0 + \\\\ &\\qquad F_{gx}e_{023} + F_{gy}e_{031} + F_{gz}e_{012} + F_{gw}e_{321}\\end{aligned}$$             |
 ##
-## ### Symbols Used
-## | Symbol | Meaning                                 | Functions     | Operators | Meaning                                                                        |
-## | ---    | ---                                     | ---           | ---       | ---                                                                            |
-## | `∧`    | Wedge / Exterior product / Join         | [wedge]       | [`∧`]     |                                                                                |
-## | `∨`    | Antiwedge / Exterior antiproduct / Meet | [antiwedge]   | [`∨`]     |                                                                                |
-## | `●`    | Bulk                                    | [bulk]        |           | The real/non-$e_0$ parts of the element                                        |
-## | `○`    | Weight                                  | [weight]      |           | The extent of the element into the 4th dimension (i.e., those including $e_0$) |
-## | `★`    | Bulk dual                               | [bulk_dual]   | [`★`]     |                                                                                |
-## | `☆`    | Weight dual                             | [weight_dual] | [`★~`]    |                                                                                |
+## Symbols Used
+## ------------
+## | Symbol | Meaning                                 | Functions      | Operators | Meaning                                                                        |
+## | ---    | ---                                     | ---            | ---       | ---                                                                            |
+## | `∧`    | Wedge / Exterior product / Join         | `wedge`_       | [`∧`]     |                                                                                |
+## | `∨`    | Antiwedge / Exterior antiproduct / Meet | `antiwedge`_   | [`∨`]     |                                                                                |
+## | `●`    | Bulk                                    | `bulk`_        |           | The real/non-$e_0$ parts of the element                                        |
+## | `○`    | Weight                                  | `weight`_      |           | The extent of the element into the 4th dimension (i.e., those including $e_0$) |
+## | `★`    | Bulk dual                               | `bulk_dual`_   | [`★`]     |                                                                                |
+## | `☆`    | Weight dual                             | `weight_dual`_ | [`★~`]    |                                                                                |
 ##
-## ### List of Useful Expressions
+## List of Useful Expressions
+## --------------------------
 ## | Expression     | Interpretation                                         |
 ## | ---            | ---                                                    |
 ## | `g ∨ l`        | Construct a point where `g` and `l` intersect          |
@@ -45,7 +52,7 @@
 ## | `g ∨ (l ∧ g★)` | Centrally project `l` onto `g`                         |
 ##
 
-import common, util, geometry, vector, matrix
+import common, geometry, vector, matrix
 
 type
     Bivec2D* = object
@@ -183,6 +190,7 @@ func `★~`*(g: Trivec3D): Vec4     = weight_dual g
 #[ -------------------------------------------------------------------- ]#
 
 func wedge*(p, q: Vec3): Bivec2D =
+    ## ```none
     ## $$
     ## \begin{aligned}
     ## p \wedge q &= (p_xe_1 + p_ye_2 + p_we_0) \wedge (q_xe_1 + q_ye_2 + q_we_0) \\
@@ -193,6 +201,7 @@ func wedge*(p, q: Vec3): Bivec2D =
     ##            &= (p_wq_x - p_xq_w)e_{01} + (p_yq_w - p_wq_y)e_{20} + (p_xq_y - p_yq_x)e_{12}
     ## \end{aligned}
     ## $$
+    ## ```
     bivec p.w*q.x - p.x*q.w,
           p.y*q.w - p.w*q.y,
           p.x*q.y - p.y*q.x
@@ -204,6 +213,7 @@ func wedge*(p, q: Point2D): Bivec2D =
           p.x*q.y - p.y*q.x
 
 func wedge*(p: Vec3; l: Bivec2D): Vec3 =
+    ## ```none
     ## $$
     ## \begin{aligned}
     ## p \wedge l &= (p_xe_1 + p_ye_2 + p_we_0) \wedge (l_xe_{01} + l_ye_{20} + l_we_{12}) \\
@@ -214,11 +224,13 @@ func wedge*(p: Vec3; l: Bivec2D): Vec3 =
     ##            &= -p_yl_we_1 + p_xl_we_2 + (p_yl_y - p_xl_x)e_0 + (p_xl_y + p_yl_x + p_wl_w)e_{012}
     ## \end{aligned}
     ## $$
+    ## ```
     [-p.y*l.w,
       p.x*l.w,
       p.y*l.y - p.x*l.x]
 
 func wedge*(p: Point2D; l: Bivec2D): Point2D =
+    ## ```none
     ## $$
     ## \begin{aligned}
     ## p \wedge l &= (p_xe_1 + p_ye_2 + p_we_0) \wedge (l_xe_{01} + l_ye_{20} + l_we_{12}) \\
@@ -229,6 +241,7 @@ func wedge*(p: Point2D; l: Bivec2D): Point2D =
     ##            &= -p_yl_we_1 + p_xl_we_2 + (p_yl_y - p_xl_x)e_0 + (p_xl_y + p_yl_x + p_wl_w)e_{012}
     ## \end{aligned}
     ## $$
+    ## ```
     let w = p.y*l.y - p.x*l.x
     point -p.y*l.w / w,
            p.x*l.w / w
@@ -239,6 +252,7 @@ func wedge*(l: Bivec2D; p: Point2D): Point2D = -wedge(p, l)
 #[ -------------------------------------------------------------------- ]#
 
 func wedge*(p, q: Vec4): Bivec3D =
+    ## ```none
     ## $$
     ## \begin{aligned}
     ## p \wedge q &= (p_xe_1 + p_ye_2 + p_ze_3 + p_we_0) \wedge (q_xe_1 + q_ye_2 + q_ze_3 + q_we_0) \\
@@ -255,6 +269,7 @@ func wedge*(p, q: Vec4): Bivec3D =
     ##       &\qquad p_xq_x + p_yq_y + p_zq_z
     ## \end{aligned}
     ## $$
+    ## ```
     bivec [p.w*q.x - p.x*q.w,
            p.w*q.y - p.y*q.w,
            p.w*q.z - p.z*q.w],
