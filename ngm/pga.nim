@@ -52,7 +52,7 @@
 ## | `g ∨ (l ∧ g★)` | Centrally project `l` onto `g`                         |
 ##
 
-import common, geometry, vector, matrix
+import common, geometry, vector
 
 type
     Bivec2D* = object

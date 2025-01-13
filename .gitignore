@@ -5,4 +5,4 @@ docs/**
 !docs/*.md
 
 TODO
-tests/main
+tests/test

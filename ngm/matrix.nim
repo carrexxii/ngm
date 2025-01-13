@@ -13,7 +13,7 @@ type
     Transform2D* = array[3, Vec2] ## Missing row is assumed to be [0, 0, 1]
     Transform3D* = array[4, Vec3] ## Missing row is assumed to be [0, 0, 0, 1]
 
-    AnyMat = Mat2 | Mat3 | Mat4 | Transform2D | Transform3D
+    AnyMat* = Mat2 | Mat3 | Mat4 | Transform2D | Transform3D
 
 const
     Mat2Ident*: Mat2 = [[1, 0],
@@ -38,6 +38,7 @@ const
 func `$`*(m: AnyMat): string = "[" & (m.join ",\n ") & "]"
 
 func `[]`*(m: AnyMat; j, i: SomeInteger): Real         = m[j][i]
+func `[]`*(m: var AnyMat; j, i: SomeInteger): var Real = m[j][i]
 func `[]=`*(m: var AnyMat; j, i: SomeInteger; s: Real) = m[j][i] = s
 
 func mat*(v1, v2: Vec2): Mat2         = [v1, v2]
@@ -124,32 +125,32 @@ func `-`*[T: AnyMat](m: T): T =
     for i in 0..<m.len:
         result[i] = -m[i]
 
-func `+`*[T: AnyMat](m1, m2: T): T =
+func `+`*[T: AnyMat](m1, m2: T): T {.noInit.} =
     for i in 0..<m1.len:
         result[i] = m1[i] + m2[i]
 func `+=`*[T: AnyMat](m1: var T; m2: T) = m1 = m1 + m2
 
-func `-`*[T: AnyMat](m1, m2: T): T =
+func `-`*[T: AnyMat](m1, m2: T): T {.noInit.} =
     for i in 0..<m1.len:
         result[i] = m1[i] - m2[i]
 func `-=`*[T: AnyMat](m1: var T; m2: T) = m1 = m1 - m2
 
-func `*`*[T: AnyMat](m: T; s: SomeNumber): T =
+func `*`*[T: AnyMat](m: T; s: Real): T {.noInit.} =
     for i in 0..<m.len:
-        result[i] = m[i] * Real s
-func `*`*[T: AnyMat](s: SomeNumber; m: T): T = m * s
-func `*=`*(m: var AnyMat; s: SomeNumber) = m = m * s
+        result[i] = m[i] * s
+func `*`*[T: AnyMat](s: Real; m: T): T = m * s
+func `*=`*(m: var AnyMat; s: Real) = m = m * s
 
-func `/`*[T: AnyMat](m: T; s: SomeNumber): T =
+func `/`*[T: AnyMat](m: T; s: Real): T {.noInit.} =
     for i in 0..<m.len:
-        result[i] = m[i] / Real s
-func `/`*[T: AnyMat](s: SomeNumber; m: T): T = m / s
-func `/=`*(m: var AnyMat; s: SomeNumber) = m = m / s
+        result[i] = m[i] / s
+func `/`*[T: AnyMat](s: Real; m: T): T = m / s
+func `/=`*(m: var AnyMat; s: Real) = m = m / s
 
 func scaled*[T: AnyMat](m: T; s: Real): T =
+    result = m
     for i in 0..<m.len:
-        result[i]    = m[i]
-        result[i, i] = m[i, i] * s
+        result[i, i] *= s
 func scale*[T: AnyMat](m: var T; s: Real) = m = m.scaled s
 
 func transposed*(m: Mat2): Mat2 =
@@ -171,10 +172,6 @@ func transposed*(m: Mat4): Mat4 =
      [m03, m13, m23, m33]]
 
 func transpose*(m: var (Mat2 | Mat3 | Mat4)) = m = transposed m
-
-{.pop.} # inline
-
-#[ -------------------------------------------------------------------- ]#
 
 func determinant*(m: Mat2): Real =
     expand_alias m
@@ -310,10 +307,6 @@ func `*`*(m: Mat4; v: Vec3): Vec3 =
     [m00*v.x + m10*v.y + m20*v.z,
      m01*v.x + m11*v.y + m21*v.z,
      m02*v.x + m12*v.y + m22*v.z]
-
-#[ -------------------------------------------------------------------- ]#
-
-{.push inline.}
 
 func translation*(v: Vec2): Transform2D =
     [[1.0, 0.0],

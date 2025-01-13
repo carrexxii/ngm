@@ -3,6 +3,7 @@
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
 {.experimental: "dotOperators".}
+{.warning[ImplicitDefaultValue]:off.}
 
 import std/[macros, strutils, math, options], common, util
 from std/sequtils import map_it, zip
@@ -166,6 +167,8 @@ func normalized*[T: AnyVec](v: T): T =
     let mag = mag v
     if mag != 0:
         result = v / mag
+    else:
+        result = zero_default T
 func normalize*(v: var AnyVec) = v = normalized v
 
 func distance2*(v, u: Vec2): Real = (v.x - u.x)^2 + (v.y - u.y)^2

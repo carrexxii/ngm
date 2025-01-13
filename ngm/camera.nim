@@ -31,17 +31,17 @@ type
         pkPerspective
         pkOrthogonal
     Camera3D* = object
-        pos*      : Vec3    = vec( 1,  1,  0)
-        pan_speed*: Real    = 0.1
-        dir*      : Vec3    = vec(-1, -1,  0)
-        rot_speed*: Radians = 0.1'rad
-        up*       : Vec3    = vec( 0,  0, -1)
+        pos*      : Vec3
+        pan_speed*: Real
+        dir*      : Vec3
+        rot_speed*: Radians
+        up*       : Vec3
         proj_kind*: ProjectionKind
         znear*    : Real
         zfar*     : Real
-        view*     : Mat4 = Mat4Ident
-        proj*     : Mat4 = Mat4Ident
-        proj_inv* : Mat4 = Mat4Ident
+        view*     : Mat4
+        proj*     : Mat4
+        proj_inv* : Mat4
 
 func right*(cam: Camera3D): Vec3 {.inline.} = normalized (cam.dir × cam.up)
 func up*(cam: Camera3D): Vec3    {.inline.} = normalized (cam.right × (cam.dir - cam.pos))
@@ -103,20 +103,20 @@ func perspective*(ar: Real; fov: Radians; n, f: Real; hfov = true; zero_to_one =
     let m11 = if hfov: c    else: ar*c
     let m22 = if hfov: ar*c else: c
     if f == Inf:
-        [[m11, 0  ,  0,  0],
-         [0  , m22,  0,  0],
-         [0  , 0  , -1, -1],
-         [0  , 0  , -n,  0]]
+        let m43 = if zero_to_one: -n else: -2*n
+        [[m11, 0  ,  0 ,  0],
+         [0  , m22,  0 ,  0],
+         [0  , 0  , -1 , -1],
+         [0  , 0  , m43,  0]]
     else:
-        let dr = -f/(f - n)
-        # -(f + n)/(f - n)
-        # -2*f*n/(f - n)
-        [[m11, 0  , 0   ,  0],
-         [0  , m22, 0   ,  0],
-         [0  , 0  , dr  , -1],
-         [0  , 0  , n*dr,  0]]
+        let dr  = -f/(f - n)
+        let m33 = if zero_to_one: dr   else: dr + n/(f - n)
+        let m43 = if zero_to_one: n*dr else: 2*n*dr
+        [[m11, 0  , 0  ,  0],
+         [0  , m22, 0  ,  0],
+         [0  , 0  , m33, -1],
+         [0  , 0  , m43,  0]]
 
-import std/math
 func update*(cam: var Camera2D; dt: Real) =
     if cam.zoom_state != zsNone:
         cam.zoom += cam.zoom_speed*(if cam.zoom_state == zsIn: dt else: -dt)

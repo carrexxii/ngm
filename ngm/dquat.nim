@@ -26,8 +26,8 @@ func `-`*(q: DQuat): DQuat = [-q.real, -q.dual]
 func `+`*(q, p: DQuat): DQuat = [q.real + p.real, q.dual + p.dual]
 func `-`*(q, p: DQuat): DQuat = [q.real - p.real, q.dual - p.dual]
 
-func `+=`*(q: var DQuat; p: DQuat): DQuat = q = q + p
-func `-=`*(q: var DQuat; p: DQuat): DQuat = q = q - p
+func `+=`*(q: var DQuat; p: DQuat) = q = q + p
+func `-=`*(q: var DQuat; p: DQuat) = q = q - p
 
 func `*`*(q, p: DQuat): DQuat = [q.real*p.real, q.real*p.dual + q.dual*p.real]
 func `*`*(q: DQuat; s: Real): DQuat = [s*q.real, s*q.dual]
@@ -69,8 +69,8 @@ func dquat*(n: Vec3; α: Radians; t: Vec3): DQuat =
     qt*qr
 
 func dquat*(q: Quat; t: Vec3): DQuat =
-    result.real = normalized q
-    result.dual = quat(t.x, t.y, t.z, 0)*result.real*0.5
+    let r = normalized q
+    DQuat(real: r, dual: quat(t.x, t.y, t.z, 0)*r*0.5)
 
 func mat*(q: DQuat): Transform3D =
     let q = normalized q
