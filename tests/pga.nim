@@ -1,6 +1,6 @@
 block Pga3D:
     var
-        p = point(1, 1, 1)
+        p = vec(1, 1, 1, 1)
         q = vec(2, 2, 2, 1)
         l = bivec(1, 2, 3, 3, 2, 1)
         m = bivec(1, 1, 1, 2, 2, 2)
@@ -9,7 +9,7 @@ block Pga3D:
 
     test "Stringify":
         check:
-            $p == "(1.0, 1.0, 1.0)"
+            $p == "(1.0, 1.0, 1.0, 1.0)"
             $q == "(2.0, 2.0, 2.0, 1.0)"
             $l == "(1.0, 2.0, 3.0, 3.0, 2.0, 1.0)"
             $m == "(1.0, 1.0, 1.0, 2.0, 2.0, 2.0)"
@@ -17,7 +17,7 @@ block Pga3D:
             $h == "(-1.0, -2.0, -3.0, 2.0)"
 
         check:
-            p.repr == "Point3D (x: 1.0, y: 1.0, z: 1.0)"
+            p.repr == "Vec4 (x: 1.0, y: 1.0, z: 1.0, w: 1.0)"
             q.repr == "Vec4 (x: 2.0, y: 2.0, z: 2.0, w: 1.0)"
             l.repr == "Bivec3D (v: (x: 1.0e01, y: 2.0e02, z: 3.0e03), m: (x: 3.0e23, y: 2.0e31, z: 1.0e12))"
             m.repr == "Bivec3D (v: (x: 1.0e01, y: 1.0e02, z: 1.0e03), m: (x: 2.0e23, y: 2.0e31, z: 2.0e12))"
@@ -46,8 +46,8 @@ block Pga3D:
             ★q == trivec(2, 2, 2, 0)
             ★l == bivec(-vec(3, 2, 1), Vec3Zero)
             ★m == bivec(-vec(2, 2, 2), Vec3Zero)
-            ★g == vec(0'f32, 0, 0, -g.w)
-            ★h == vec(0'f32, 0, 0, -h.w)
+            ★g == vec(0, 0, 0, -g.w)
+            ★h == vec(0, 0, 0, -h.w)
 
         check:
             ★~p == trivec(0, 0, 0, 1)
@@ -58,7 +58,7 @@ block Pga3D:
             ★~h == vec(1, 2, 3, 0)
 
         check:
-            p.bulk_norm == norm p
+            p.bulk_norm == norm p.xyz
             q.bulk_norm == norm q.xyz
             l.bulk_norm == norm l.m
             m.bulk_norm == norm m.m

@@ -56,21 +56,21 @@ import common, geometry, vector
 
 type
     Bivec2D* = object
-        x*: Real ## $l_xe_{01}$
-        y*: Real ## $l_ye_{20}$
-        w*: Real ## $l_we_{12}$
+        x*: float32 ## $l_xe_{01}$
+        y*: float32 ## $l_ye_{20}$
+        w*: float32 ## $l_we_{12}$
     Bivec3D* = object
         v*: Vec3 ## $v_xe_{01} + v_ye_{02} + v_ze_{03}$
         m*: Vec3 ## $m_xe_{23} + m_ye_{31} + m_ze_{12}$
 
     Trivec3D* = object
-        x*: Real ## $g_xe_{023}$
-        y*: Real ## $g_ye_{031}$
-        z*: Real ## $g_ze_{012}$
-        w*: Real ## $g_we_{321}$
+        x*: float32 ## $g_xe_{023}$
+        y*: float32 ## $g_ye_{031}$
+        z*: float32 ## $g_ze_{012}$
+        w*: float32 ## $g_we_{321}$
 
-    Antiscalar2D* = Real ## $e_{012}$
-    Antiscalar3D* = Real ## $e_{0123}$
+    Antiscalar2D* = float32 ## $e_{012}$
+    Antiscalar3D* = float32 ## $e_{0123}$
 
     Motor* = object
         v*: Vec4 ## $v_xe_{01} + v_ye_{02} + v_ze_{03} + v_we_{0123}$
@@ -80,7 +80,7 @@ type
         p*: Vec4 ## $p_xe_1 + p_ye_2 + p_ze_3 + p_we_0$
         g*: Vec4 ## $g_xe_{023} + g_ye_{031} + g_ze_{012} + g_we_{321}$
 
-    Blade = Real | Vec3 | Vec4 | Point2D | Point3D | Bivec2D | Bivec3D | Trivec3D | Antiscalar2D | Antiscalar3D
+    Blade* = float32 | Vec2 | Vec3 | Vec4 | Bivec2D | Bivec3D | Trivec3D | Antiscalar2D | Antiscalar3D
 
 {.push inline.}
 
@@ -94,9 +94,9 @@ func repr*(l: Bivec2D): string = &"Bivec2D (x: {l.x}e01, y: {l.y}e20, w: {l.w}e1
 func repr*(l: Bivec3D ): string = &"Bivec3D (v: (x: {l.v.x}e01, y: {l.v.y}e02, z: {l.v.z}e03), m: (x: {l.m.x}e23, y: {l.m.y}e31, z: {l.m.z}e12))"
 func repr*(g: Trivec3D): string = &"Trivec3D (x: {g.x}e023, y: {g.y}e031, z: {g.z}e012, w: {g.w}e321)"
 
-func bivec*(x, y, w: Real): Bivec2D                = Bivec2D(x: x, y: y, w: w)
-func bivec*(vx, vy, vz, mx, my, mz: Real): Bivec3D = Bivec3D(v: [vx, vy, vz], m: [mx, my, mz])
-func trivec*(x, y, z, w: Real): Trivec3D           = Trivec3D(x: x, y: y, z: z, w: w)
+func bivec*(x, y, w: float32): Bivec2D                = Bivec2D(x: x, y: y, w: w)
+func bivec*(vx, vy, vz, mx, my, mz: float32): Bivec3D = Bivec3D(v: [vx, vy, vz], m: [mx, my, mz])
+func trivec*(x, y, z, w: float32): Trivec3D           = Trivec3D(x: x, y: y, z: z, w: w)
 
 func bivec*(v: Vec3): Bivec2D    = bivec v.x, v.y, v.w
 func bivec*(v, m: Vec3): Bivec3D = bivec v.x, v.y, v.z, m.x, m.y, m.z
@@ -116,74 +116,66 @@ elif defined Ngm3D:
 
 # TODO: I am not certain if the 2D ones are correct (they may need to be negated)
 func right_complement*(p: Vec3    ): Bivec2D  = bivec p
-func right_complement*(p: Point2D ): Bivec2D  = bivec p.x, p.y, 1
+func right_complement*(p: Vec2    ): Bivec2D  = bivec p.x, p.y, 1
 func right_complement*(l: Bivec2D ): Vec3     = vec l.x, l.y, l.w
 func right_complement*(p: Vec4    ): Trivec3D = trivec p
-func right_complement*(p: Point3D ): Trivec3D = trivec p.x, p.y, p.z, 1
 func right_complement*(l: Bivec3D ): BiVec3D  = bivec -l.m, -l.v
 func right_complement*(g: Trivec3D): Vec4     = -[g.x, g.y, g.z, g.w]
 
 func left_complement*(p: Vec3    ): Bivec2D  = right_complement p
-func left_complement*(p: Point2D ): Bivec2D  = right_complement p
+func left_complement*(p: Vec2    ): Bivec2D  = right_complement p
 func left_complement*(l: Bivec2D ): Vec3     = right_complement l
 func left_complement*(p: Vec4    ): Trivec3D = trivec -p
-func left_complement*(p: Point3D ): Trivec3D = trivec -p.x, -p.y, -p.z, -1
 func left_complement*(l: Bivec3D ): BiVec3D  = bivec -l.m, -l.v
 func left_complement*(g: Trivec3D): Vec4     = [g.x, g.y, g.z, g.w]
 
 func bulk*(p: Vec3    ): Vec3     = [p.x, p.y, 0]
-func bulk*(p: Point2D ): Vec3     = [p.x, p.y, 0]
+func bulk*(p: Vec2    ): Vec3     = [p.x, p.y, 0]
 func bulk*(l: Bivec2D ): Bivec2D  = bivec l.x, l.y, 0
 func bulk*(p: Vec4    ): Vec4     = [p.x, p.y, p.z, 0]
-func bulk*(p: Point3D ): Vec4     = [p.x, p.y, p.z, 0]
 func bulk*(l: Bivec3D ): Bivec3D  = bivec Vec3Zero, l.m
 func bulk*(g: Trivec3D): Trivec3D = trivec 0, 0, 0, g.w
 
-func weight*(p: Vec3    ): Vec3     = [Real 0, 0, p.w]
-func weight*(p: Point2D ): Vec3     = [Real 0, 0, 1]
+func weight*(p: Vec3    ): Vec3     = [float32 0, 0, p.w]
+func weight*(p: Vec2    ): Vec3     = [float32 0, 0, 1]
 func weight*(l: Bivec2D ): Bivec2D  = bivec 0, 0, l.w
-func weight*(p: Vec4    ): Vec4     = [Real 0, 0, 0, p.w]
-func weight*(p: Point3D ): Vec4     = [Real 0, 0, 0, 1]
+func weight*(p: Vec4    ): Vec4     = [float32 0, 0, 0, p.w]
 func weight*(l: Bivec3D ): Bivec3D  = bivec l.v, Vec3Zero
 func weight*(g: Trivec3D): Trivec3D = trivec g.x, g.y, g.z, 0
 
 func bulk_dual*(x: Blade): auto   = right_complement bulk x
 func weight_dual*(x: Blade): auto = right_complement weight x
 
-func bulk_norm*(p: Vec3    ): Real = norm p.xy
-func bulk_norm*(p: Point2D ): Real = norm p
-func bulk_norm*(l: Bivec2D ): Real = norm [l.x, l.y]
-func bulk_norm*(p: Vec4    ): Real = norm p.xyz
-func bulk_norm*(p: Point3D ): Real = norm p
-func bulk_norm*(l: Bivec3D ): Real = norm l.m
-func bulk_norm*(g: Trivec3D): Real = abs g.w
+func bulk_norm*(p: Vec3    ): float32 = norm p.xy
+func bulk_norm*(p: Vec2    ): float32 = norm p
+func bulk_norm*(l: Bivec2D ): float32 = norm [l.x, l.y]
+func bulk_norm*(p: Vec4    ): float32 = norm p.xyz
+func bulk_norm*(l: Bivec3D ): float32 = norm l.m
+func bulk_norm*(g: Trivec3D): float32 = abs g.w
 
 func weight_norm*(p: Vec3    ): Antiscalar2D = Antiscalar2D abs p.z # TODO: swizzle
-func weight_norm*(p: Point2D ): Antiscalar2D = Antiscalar2D 1
+func weight_norm*(p: Vec2    ): Antiscalar2D = Antiscalar2D 1
 func weight_norm*(l: Bivec2D ): Antiscalar2D = Antiscalar2D abs l.w
 func weight_norm*(p: Vec4    ): Antiscalar3D = AntiScalar3D abs p.w
-func weight_norm*(p: Point3D ): Antiscalar3D = AntiScalar3D 1
 func weight_norm*(l: Bivec3D ): Antiscalar3D = AntiScalar3D norm l.v
 func weight_norm*(g: Trivec3D): Antiscalar3D = AntiScalar3D norm [g.x, g.y, g.z]
 
-func attitude*(p: Vec4    ): Real    = p.w
-func attitude*(p: Point3D ): Real    = 1
+func attitude*(p: Vec4    ): float32    = p.w
+func attitude*(p: Vec3    ): float32    = 1
 func attitude*(l: Bivec3D ): Vec4    = [l.v.x, l.v.y, l.v.z, 0]
 func attitude*(g: Trivec3D): Bivec3D = bivec Vec3Zero, [g.x, g.y, g.z]
 
 func `★`*(p: Vec3    ): Bivec2D  = bulk_dual p
-func `★`*(p: Point2D ): Bivec2D  = bulk_dual p
+func `★`*(p: Vec2    ): Bivec2D  = bulk_dual p
 func `★`*(l: Bivec2D ): Vec3     = bulk_dual l
 func `★`*(p: Vec4    ): Trivec3D = bulk_dual p
-func `★`*(p: Point3D ): Trivec3D = bulk_dual p
 func `★`*(l: Bivec3D ): BiVec3D  = bulk_dual l
 func `★`*(g: Trivec3D): Vec4     = bulk_dual g
 
 func `★~`*(p: Vec3    ): Bivec2D  = weight_dual p
-func `★~`*(p: Point2D ): Bivec2D  = weight_dual p
+func `★~`*(p: Vec2    ): Bivec2D  = weight_dual p
 func `★~`*(l: Bivec2D ): Vec3     = weight_dual l
 func `★~`*(p: Vec4    ): Trivec3D = weight_dual p
-func `★~`*(p: Point3D ): Trivec3D = weight_dual p
 func `★~`*(l: Bivec3D ): BiVec3D  = weight_dual l
 func `★~`*(g: Trivec3D): Vec4     = weight_dual g
 
@@ -206,7 +198,7 @@ func wedge*(p, q: Vec3): Bivec2D =
           p.y*q.w - p.w*q.y,
           p.x*q.y - p.y*q.x
 
-func wedge*(p, q: Point2D): Bivec2D =
+func wedge*(p, q: Vec2): Bivec2D =
     ## $l = p \\wedge q$
     bivec q.x - p.x,
           p.y - q.y,
@@ -229,7 +221,7 @@ func wedge*(p: Vec3; l: Bivec2D): Vec3 =
       p.x*l.w,
       p.y*l.y - p.x*l.x]
 
-func wedge*(p: Point2D; l: Bivec2D): Point2D =
+func wedge*(p: Vec2; l: Bivec2D): Vec2 =
     ## ```none
     ## $$
     ## \begin{aligned}
@@ -243,11 +235,11 @@ func wedge*(p: Point2D; l: Bivec2D): Point2D =
     ## $$
     ## ```
     let w = p.y*l.y - p.x*l.x
-    point -p.y*l.w / w,
-           p.x*l.w / w
+    [-p.y*l.w / w,
+      p.x*l.w / w]
 
-func wedge*(l: Bivec2D; p: Vec3): Vec3       = -wedge(p, l)
-func wedge*(l: Bivec2D; p: Point2D): Point2D = -wedge(p, l)
+func wedge*(l: Bivec2D; p: Vec3): Vec3 = -wedge(p, l)
+func wedge*(l: Bivec2D; p: Vec2): Vec2 = -wedge(p, l)
 
 #[ -------------------------------------------------------------------- ]#
 
@@ -277,14 +269,14 @@ func wedge*(p, q: Vec4): Bivec3D =
            p.z*q.x - p.x*q.z,
            p.x*q.y - p.y*q.x]
 
-func wedge*(p, q: Point3D): Bivec3D =
-    ## $l = p \\wedge q$
-    bivec [q.x - p.x,
-           q.y - p.y,
-           q.z - p.z],
-          [p.y*q.z - p.z*q.y,
-           p.z*q.x - p.x*q.z,
-           p.x*q.y - p.y*q.x]
+# func wedge*(p, q: Vec3): Bivec3D =
+#     ## $l = p \\wedge q$
+#     bivec [q.x - p.x,
+#            q.y - p.y,
+#            q.z - p.z],
+#           [p.y*q.z - p.z*q.y,
+#            p.z*q.x - p.x*q.z,
+#            p.x*q.y - p.y*q.x]
 
 func wedge*(l: Bivec3D; p: Vec4): Trivec3D =
     ## $g = l \\wedge p$
@@ -293,7 +285,7 @@ func wedge*(l: Bivec3D; p: Vec4): Trivec3D =
            l.v.x*p.y - l.v.y*p.x + l.m.z*p.w,
           -l.m.x*p.x - l.m.y*p.y + l.m.z*p.z
 
-func wedge*(l: Bivec3D; p: Point3D): Trivec3D =
+func wedge*(l: Bivec3D; p: Vec3): Trivec3D =
     ## $g = l \\wedge p$
     trivec l.v.y*p.z - l.v.z*p.y + l.m.x,
            l.v.z*p.x - l.v.x*p.z + l.m.y,
@@ -317,25 +309,25 @@ func antiwedge*(g: Trivec3D; l: Bivec3D): Vec4 =
     -g.x*l.v.x - g.y*l.v.y - g.z*l.v.z]
 
 func wedge*(p: Vec4; l: Bivec3D): Trivec3D     = -wedge(l, p)
-func wedge*(p: Point3D; l: Bivec3D): Trivec3D  = -wedge(l, p)
+func wedge*(p: Vec3; l: Bivec3D): Trivec3D     = -wedge(l, p)
 func antiwedge*(l: Bivec3D; g: Trivec3D): Vec4 = -antiwedge(g, l)
 
 #[ -------------------------------------------------------------------- ]#
 
-func `∧`*(p, q: Vec3 | Point2D): Bivec2D           = wedge p, q
-func `∧`*(p, q: Vec4 | Point3D): Bivec3D           = wedge p, q
-func `∧`*(l: Bivec3D; p: Vec4 | Point3D): Trivec3D = wedge l, p
-func `∧`*(p: Vec4 | Point3D; l: Bivec3D): Trivec3D = wedge p, l
+func `∧`*(p, q: Vec3): Bivec2D           = wedge p, q
+func `∧`*(p, q: Vec4): Bivec3D           = wedge p, q
+func `∧`*(l: Bivec3D; p: Vec4): Trivec3D = wedge l, p
+func `∧`*(p: Vec4; l: Bivec3D): Trivec3D = wedge p, l
 
 func `∨`*(g, h: Trivec3D): Bivec3D       = antiwedge g, h
 func `∨`*(g: Trivec3D; l: Bivec3D): Vec4 = antiwedge g, l
 func `∨`*(l: Bivec3D; g: Trivec3D): Vec4 = antiwedge l, g
 
-func oproject*(p: Point3D | Vec4; g: Trivec3D): Point3D = ##[ Orthogonally project $p$ onto $g$. ]## g ∨ (p ∧ ★~g)
-func oproject*(p: Point3D | Vec4; l: Bivec3D ): Point3D = ##[ Orthogonally project $p$ onto $l$. ]## l ∨ (p ∧ ★~l)
-func oproject*(l: Bivec3D       ; g: Trivec3D): Bivec3D = ##[ Orthogonally project $l$ onto $g$. ]## g ∨ (l ∧ ★~g)
-func cproject*(p: Point3D | Vec4; g: Trivec3D): Point3D = ##[ Centrally project $p$ onto $g$.    ]## g ∨ (p ∧ ★g)
-func cproject*(p: Point3D | Vec4; l: Bivec3D ): Point3D = ##[ Centrally project $p$ onto $l$.    ]## l ∨ (p ∧ ★l)
-func cproject*(l: Bivec3D       ; g: Trivec3D): Bivec3D = ##[ Centrally project $l$ onto $g$.    ]## g ∨ (l ∧ ★g)
+func oproject*(p: Vec4; g: Trivec3D): Vec4       = ##[ Orthogonally project $p$ onto $g$. ]## g ∨ (p ∧ ★~g)
+func oproject*(p: Vec4; l: Bivec3D ): Vec4       = ##[ Orthogonally project $p$ onto $l$. ]## l ∨ (p ∧ ★~l)
+func oproject*(l: Bivec3D; g: Trivec3D): Bivec3D = ##[ Orthogonally project $l$ onto $g$. ]## g ∨ (l ∧ ★~g)
+func cproject*(p: Vec4; g: Trivec3D): Vec4       = ##[ Centrally project $p$ onto $g$.    ]## g ∨ (p ∧ ★g)
+func cproject*(p: Vec4; l: Bivec3D ): Vec4       = ##[ Centrally project $p$ onto $l$.    ]## l ∨ (p ∧ ★l)
+func cproject*(l: Bivec3D; g: Trivec3D): Bivec3D = ##[ Centrally project $l$ onto $g$.    ]## g ∨ (l ∧ ★g)
 
 {.pop.}

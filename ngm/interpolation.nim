@@ -2,42 +2,42 @@ import std/math, common, util, quat, dquat
 
 {.push inline.}
 
-func lerp*(a, b, t: Real): Real =
+func lerp*[T: SomeFloat](a, b, t: T): T =
     a + t*(b - a)
 
-func step*(x: Real; r = (Real 0)..(Real 1)): Real =
+func step*[T: SomeFloat](x: T; r = 0.0..1.0): T =
     if x < r.b:
         r.a
     else:
         r.b
 
-func ease_in*(x: Real; exp = 2): Real  = x^exp
-func ease_out*(x: Real; exp = 2): Real = 1 - (1 - x)^exp
-func ease_in_out*(x: Real; exp = 2): Real =
+func ease_in*[T: SomeFloat](x: T; exp = 2): T  = x^exp
+func ease_out*[T: SomeFloat](x: T; exp = 2): T = 1 - (1 - x)^exp
+func ease_in_out*[T: SomeFloat](x: T; exp = 2): T =
     if x < 0.5:
         2*x^exp
     else:
         1 - 0.5*(-2*x + 2)^exp
 
-func ease_in_sine*(x: Real): Real     = 1 - cos(π÷2*x)
-func ease_out_sine*(x: Real): Real    = sin(π÷2*x)
-func ease_in_out_sine*(x: Real): Real = 0.5 - 0.5*cos(x*π)
+func ease_in_sine*[T: SomeFloat](x: T): T     = 1 - cos(π÷2*x)
+func ease_out_sine*[T: SomeFloat](x: T): T    = sin(π÷2*x)
+func ease_in_out_sine*[T: SomeFloat](x: T): T = 0.5 - 0.5*cos(x*π)
 
-func ease_in_circular*(x: Real): Real  = 1 - sqrt(1 - x^2)
-func ease_out_circular*(x: Real): Real = sqrt(1 - (x - 1)^2)
-func ease_in_out_circular*(x: Real): Real =
+func ease_in_circular*[T: SomeFloat](x: T): T  = 1 - sqrt(1 - x^2)
+func ease_out_circular*[T: SomeFloat](x: T): T = sqrt(1 - (x - 1)^2)
+func ease_in_out_circular*[T: SomeFloat](x: T): T =
     if x < 0.5:
         0.5 - 0.5*sqrt(1 - 4*x^2)
     else:
         0.5*sqrt(1 - (-2*x + 2)^2)
 
 const
-    BackC1: Real = 1.70158
-    BackC2: Real = BackC1*1.525
-    BackC3: Real = BackC1 + 1
-func ease_in_back*(x: Real): Real  = BackC3*x^3 - BackC1*x^2
-func ease_out_back*(x: Real): Real = 1 + BackC3*(x - 1)^3 + BackC1*(x - 1)^2
-func ease_in_out_back*(x: Real): Real =
+    BackC1 = 1.70158
+    BackC2 = BackC1*1.525
+    BackC3 = BackC1 + 1
+func ease_in_back*[T: SomeFloat](x: T): T  = BackC3*x^3 - BackC1*x^2
+func ease_out_back*[T: SomeFloat](x: T): T = 1 + BackC3*(x - 1)^3 + BackC1*(x - 1)^2
+func ease_in_out_back*[T: SomeFloat](x: T): T =
     const c = BackC2 + 1
     if x < 0.5:
         2*x^2*(2*c*x - BackC2)
@@ -46,7 +46,7 @@ func ease_in_out_back*(x: Real): Real =
 
 const ElasticC1 = 2*π/3
 const ElasticC2 = 2*π/4.5
-func ease_in_elastic*(x: Real): Real =
+func ease_in_elastic*[T: SomeFloat](x: T): T =
     if x == 0:
         0
     elif x == 1:
@@ -55,7 +55,7 @@ func ease_in_elastic*(x: Real): Real =
         const c1 = 10*ElasticC1
         const c2 = 10.75*ElasticC1
         -2.pow(10*x - 10)*sin(c1*x - c2)
-func ease_out_elastic*(x: Real): Real =
+func ease_out_elastic*[T: SomeFloat](x: T): T =
     if x == 0:
         0
     elif x == 1:
@@ -64,7 +64,7 @@ func ease_out_elastic*(x: Real): Real =
         const c1 = 10*ElasticC1
         const c2 = 0.75*ElasticC1
         2.pow(-10*x)*sin(c1*x - c2) + 1;
-func ease_in_out_elastic*(x: Real): Real =
+func ease_in_out_elastic*[T: SomeFloat](x: T): T =
     if x == 0:
         0
     elif x == 1:
@@ -78,7 +78,7 @@ func ease_in_out_elastic*(x: Real): Real =
         else:
             0.5*2.pow(-20*x + 10)*s + 1
 
-func ease_out_bounce*(x: Real): Real =
+func ease_out_bounce*[T: SomeFloat](x: T): T =
     const c1 = 7.5625
     const c2 = 2.75
     if x < (1 / c2):
@@ -89,9 +89,9 @@ func ease_out_bounce*(x: Real): Real =
         c1*(x - 2.25/c2)*x + 0.9375
     else:
         c1*(x - 2.625/c2)*x + 0.984375
-func ease_in_bounce*(x: Real): Real =
+func ease_in_bounce*[T: SomeFloat](x: T): T =
     1 - ease_out_bounce(1 - x)
-func ease_in_out_bounce*(x: Real): Real =
+func ease_in_out_bounce*[T: SomeFloat](x: T): T =
     if x < 0.5:
         0.5 - 0.5*ease_out_bounce(1 - 2*x)
     else:
@@ -99,10 +99,10 @@ func ease_in_out_bounce*(x: Real): Real =
 
 #[ -------------------------------------------------------------------- ]#
 
-func lerp*(a, b: Radians; t: Real): Radians {.borrow.}
-func lerp*(a, b: Degrees; t: Real): Degrees {.borrow.}
+func lerp*(a, b: Radians; t: float): Radians {.borrow.}
+func lerp*(a, b: Degrees; t: float): Degrees {.borrow.}
 
-func lerp*(q, p: DQuat; t: Real): DQuat =
+func lerp*(q, p: DQuat; t: float32): DQuat =
     var t1 = t
     let t2 = 1 - t
     if (q ∙ p) < 0:

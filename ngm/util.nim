@@ -1,10 +1,14 @@
+# This file is a part of NGM. Copyright (C) 2025 carrexxii.
+# It is distributed under the terms of the Apache License, Version 2.0.
+# For a copy, see the LICENSE file or <https://apache.org/licenses/>.
+
 import std/math, common, borrows
 from std/strutils import parse_float
-export pow, `^`
+export sqrt, pow, `^`
 
 type
-    Degrees* = distinct Real
-    Radians* = distinct Real
+    Degrees* = distinct float
+    Radians* = distinct float
 
 const π*   = Radians Pi
 const π⋅2* = Radians Pi*2
@@ -35,11 +39,21 @@ func degrees*(a: Radians): Degrees = `Radians -> Degrees` a
 func rad*(a: Degrees): Radians = radians a
 func deg*(a: Radians): Degrees = degrees a
 
-func sin*(α: Radians): Real = sin Real α
-func cos*(α: Radians): Real = cos Real α
-func tan*(α: Radians): Real = tan Real α
-func csc*(α: Radians): Real = csc Real α
-func sec*(α: Radians): Real = sec Real α
-func cot*(α: Radians): Real = cot Real α
+func sin*(α: Radians): float = sin float α
+func cos*(α: Radians): float = cos float α
+func tan*(α: Radians): float = tan float α
+func csc*(α: Radians): float = csc float α
+func sec*(α: Radians): float = sec float α
+func cot*(α: Radians): float = cot float α
+
+func asin*(x: SomeFloat): Radians     = Radians arcsin x
+func acos*(x: SomeFloat): Radians     = Radians arccos x
+func atan*(x: SomeFloat): Radians     = Radians arctan x
+func atan2*(x, y: SomeFloat): Radians = Radians arctan2(x, y)
+
+#[ -------------------------------------------------------------------- ]#
+
+func sign*(x: SomeNumber): int32 =
+    if x > 0: 1 elif x < 0: -1 else: 0
 
 {.pop.}

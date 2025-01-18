@@ -8,12 +8,12 @@ type DQuat* = object
     real*: Quat
     dual*: Quat
 
-const DQuatIdent* = DQuat(real: [Real 0, 0, 0, 1],
-                          dual: [Real 0, 0, 0, 0])
+const DQuatIdent* = DQuat(real: quat(0'f32, 0, 0, 1),
+                          dual: quat(0'f32, 0, 0, 0))
 
 {.push inline.}
 
-converter `array[Quat] -> DQuat`*(arr: array[2, Quat]): DQuat = DQuat(real: arr[0], dual: arr[1])
+converter quat_array_to_dquat*(arr: array[2, Quat]): DQuat = DQuat(real: arr[0], dual: arr[1])
 
 func `$`*(q: DQuat): string  = &"[{q.real}; {q.dual}]"
 func repr*(q: DQuat): string = &"DQuat [real: {repr q.real}; dual: {repr q.dual}]"
@@ -29,27 +29,27 @@ func `-`*(q, p: DQuat): DQuat = [q.real - p.real, q.dual - p.dual]
 func `+=`*(q: var DQuat; p: DQuat) = q = q + p
 func `-=`*(q: var DQuat; p: DQuat) = q = q - p
 
-func `*`*(q, p: DQuat): DQuat = [q.real*p.real, q.real*p.dual + q.dual*p.real]
-func `*`*(q: DQuat; s: Real): DQuat = [s*q.real, s*q.dual]
-func `*`*(s: Real; q: DQuat): DQuat = q*s
-func `/`*(q: DQuat; s: Real): DQuat = [q.real/s, q.dual/s]
+func `*`*(q, p: DQuat): DQuat          = [q.real*p.real, q.real*p.dual + q.dual*p.real]
+func `*`*(q: DQuat; s: float32): DQuat = [s*q.real, s*q.dual]
+func `*`*(s: float32; q: DQuat): DQuat = q*s
+func `/`*(q: DQuat; s: float32): DQuat = [q.real/s, q.dual/s]
 
-func `*=`*(q: var DQuat; p: DQuat) = q = q*p
-func `*=`*(q: var DQuat; s: Real)  = q = q*s
-func `/=`*(q: var DQuat; s: Real)  = q = q/s
+func `*=`*(q: var DQuat; p: DQuat)   = q = q*p
+func `*=`*(q: var DQuat; s: float32) = q = q*s
+func `/=`*(q: var DQuat; s: float32) = q = q/s
 
-func dot*(q, p: DQuat): Real = q.real ∙ p.real
-func `∙`*(q, p: DQuat): Real = q.real ∙ p.real
+func dot*(q, p: DQuat): float32 = q.real ∙ p.real
+func `∙`*(q, p: DQuat): float32 = q.real ∙ p.real
 
 func conjugate*(q: DQuat): DQuat = [conj q.real, conj q.dual]
-func conj*(q: DQuat): DQuat = conjugate q
+func conj*(q: DQuat): DQuat      = conjugate q
 
-func norm2*(q: DQuat): Real =
+func norm2*(q: DQuat): float32 =
     let m1 = mag q.real
     let m2 = mag q.dual
     m1^2 + m2^2
-func norm*(q: DQuat): Real = sqrt norm2 q
-func mag*(q: DQuat): Real  = norm q
+func norm*(q: DQuat): float32 = sqrt norm2 q
+func mag*(q: DQuat): float32  = norm q
 
 func normalize*(q: var DQuat) =
     normalize q.real
@@ -63,9 +63,9 @@ func dquat*(v: Vec3): DQuat    = [quat(0, 0, 0, 1), quat(v.x/2, v.y/2, v.z/2, 0)
 func dquat*(q: Quat): DQuat    = [normalized q, quat(0, 0, 0, 0)]
 
 func dquat*(n: Vec3; α: Radians; t: Vec3): DQuat =
-    let s = sin(α/2)
-    let qt = dquat(quat(0, 0, 0, 1), quat(t.x/2, t.y/2, t.z/2, 0))
-    let qr = dquat(quat(Real α*n.x, Real α*n.y, Real α*n.z, cos(α/2)), quat(0, 0, 0, 0))
+    let s  = sin(α/2)
+    let qt = [quat(0'f32, 0, 0, 1), quat(t.x/2, t.y/2, t.z/2, 0)]
+    let qr = [quat(float α*n.x, float α*n.y, float α*n.z, cos(α/2)), quat(0'f32, 0, 0, 0)]
     qt*qr
 
 func dquat*(q: Quat; t: Vec3): DQuat =
@@ -100,9 +100,9 @@ func mat3*(q: DQuat): Mat3 =
 func translation*(q: DQuat): Vec3 =
     let r = q.real
     let d = q.dual
-    2*vec(d.x*r.w - d.w*r.x - d.y*r.z + d.z*r.y,
+    2.0f*[d.x*r.w - d.w*r.x - d.y*r.z + d.z*r.y,
           d.y*r.w - d.w*r.y - d.z*r.x + d.x*r.z,
-          d.z*r.w - d.w*r.z - d.x*r.y + d.y*r.x)
+          d.z*r.w - d.w*r.z - d.x*r.y + d.y*r.x]
 func trans*(q: DQuat): Vec3 = translation q
 
 func rotation*(q: DQuat): Quat = q.real
@@ -111,7 +111,7 @@ func rot*(q: DQuat): Quat      = q.rotation
 func translate*(q: var DQuat; v: Vec3) =
     let r = q.real
     let d = q.dual
-    let t = 0.5*v
+    let t = v/2.0f
     q.dual = quat(r.w*t.x + r.y*t.z - r.z*t.y + d.x,
                   r.w*t.y + r.z*t.x - r.x*t.z + d.y,
                   r.w*t.z + r.x*t.y - r.y*t.x + d.z,

@@ -3,6 +3,8 @@
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
 ## https://cp-algorithms.com/geometry/delaunay.html
+## .. Note::
+##   The implementation of [is_in_circum_circle] is broken
 
 import common, util, vector, geometry
 from std/algorithm import sorted
@@ -14,10 +16,10 @@ type QuadEdge = object
     onext : ptr QuadEdge
     used  : bool
 
-func cross(p, q: Vec2): Real =
+func cross(p, q: Vec2): float32 =
     p.x*q.y - p.y*q.x
 
-func cross(p, q, r: Vec2): Real =
+func cross(p, q, r: Vec2): float32 =
     cross q - p, r - p
 
 func rev(e: ptr QuadEdge): ptr QuadEdge   = e.rot.rot
@@ -33,8 +35,8 @@ proc create_edge(p, q: Vec2): ptr QuadEdge =
 
     e1.origin = p
     e2.origin = q
-    e3.origin = vec(high Real, high Real)
-    e4.origin = vec(high Real, high Real)
+    e3.origin = vec(high float32, high float32)
+    e4.origin = vec(high float32, high float32)
 
     e1.rot = e3
     e2.rot = e4
@@ -71,16 +73,18 @@ func is_left_of(p: Vec2; e: ptr QuadEdge): bool =
 func is_right_of(p: Vec2; e: ptr QuadEdge): bool =
     p.cross(e.origin, e.dest) < 0
 
-func is_in_circle(p, q, r, s: Vec2): bool =
-    assert area2(p, q, r) > 0
+func is_in_circum_circle(q, a, b, c: Vec2): bool =
+    assert area2(a, b, c) > 0
     let
-        d  = 0.5*((p.x - q.x)*(r.y - q.y) - (p.y - q.y)*(r.x - q.x))
-        q2 = q ∙ q
-        r2 = r ∙ r
-
-        t = d*[r.y*q2 - q.y*r2, q.x*r2 - r.x*q2]
-        u = [s.x - q.x, s.y - q.y]
-    dist(t, u) < norm u
+        ax = a.x - q.x
+        ay = a.y - q.y
+        bx = b.x - q.x
+        by = b.y - q.y
+        cx = c.x - q.x
+        cy = c.y - q.y
+    ((ax*ax + ay*ay)*(bx*cy - cx*by) -
+     (bx*bx + by*by)*(ax*cy - cx*ay) +
+     (cx*cx + cy*cy)*(ax*by - bx*ay)) < -0.1
 
 proc triangulate(pts: openArray[Vec2]; l, r: int): tuple[e1, e2: ptr QuadEdge] =
     if r - l + 1 == 2:
@@ -120,22 +124,22 @@ proc triangulate(pts: openArray[Vec2]; l, r: int): tuple[e1, e2: ptr QuadEdge] =
     while true:
         var lcand = basel.rev.onext
         if lcand.is_valid:
-            while is_in_circle(basel.dest, basel.origin, lcand.dest, lcand.onext.dest):
+            while lcand.onext.dest.is_in_circum_circle(basel.dest, basel.origin, lcand.dest):
                 let tmp = lcand.onext
                 destroy lcand
                 lcand = tmp
 
         var rcand = basel.oprev
         if rcand.is_valid:
-            while is_in_circle(basel.dest, basel.origin, rcand.dest, rcand.oprev.dest):
-                let tmp = lcand.onext
-                destroy lcand
-                lcand = tmp
+            while rcand.oprev.dest.is_in_circum_circle(basel.dest, basel.origin, rcand.dest):
+                let tmp = rcand.oprev
+                destroy rcand
+                rcand = tmp
 
         if (not lcand.is_valid) and (not rcand.is_valid):
             break
         elif (not lcand.is_valid) or rcand.is_valid and
-             is_in_circle(lcand.dest, lcand.origin, rcand.origin, rcand.dest):
+             rcand.dest.is_in_circum_circle(lcand.dest, lcand.origin, rcand.origin):
             basel = connect(rcand, basel.rev)
         else:
             basel = connect(basel.rev, lcand.rev)

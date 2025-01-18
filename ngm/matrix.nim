@@ -37,9 +37,9 @@ const
 
 func `$`*(m: AnyMat): string = "[" & (m.join ",\n ") & "]"
 
-func `[]`*(m: AnyMat; j, i: SomeInteger): Real         = m[j][i]
-func `[]`*(m: var AnyMat; j, i: SomeInteger): var Real = m[j][i]
-func `[]=`*(m: var AnyMat; j, i: SomeInteger; s: Real) = m[j][i] = s
+func `[]`*(m: AnyMat; j, i: int): float32         = m[j][i]
+func `[]`*(m: var AnyMat; j, i: int): var float32 = m[j][i]
+func `[]=`*(m: var AnyMat; j, i: int; s: float32) = m[j][i] = s
 
 func mat*(v1, v2: Vec2): Mat2         = [v1, v2]
 func mat*(v1, v2, v3: Vec3): Mat3     = [v1, v2, v3]
@@ -88,8 +88,8 @@ macro gen_accessors*(T: typedesc; accs: varargs[string]): untyped =
         let j = n div w
         let i = n mod w
         result.add quote("@@") do:
-            func `@@name`*(m: `@@T`): Real = m[@@j, @@i]
-            func `@@name_eq`*(m: var `@@T`; s: Real) = m[@@j, @@i] = s
+            func `@@name`*(m: `@@T`): float32 = m[@@j, @@i]
+            func `@@name_eq`*(m: var `@@T`; s: float32) = m[@@j, @@i] = s
 
 Mat2.gen_accessors("m00", "m01",
                    "m10", "m11")
@@ -135,23 +135,23 @@ func `-`*[T: AnyMat](m1, m2: T): T {.noInit.} =
         result[i] = m1[i] - m2[i]
 func `-=`*[T: AnyMat](m1: var T; m2: T) = m1 = m1 - m2
 
-func `*`*[T: AnyMat](m: T; s: Real): T {.noInit.} =
+func `*`*[T: AnyMat](m: T; s: float32): T {.noInit.} =
     for i in 0..<m.len:
-        result[i] = m[i] * s
-func `*`*[T: AnyMat](s: Real; m: T): T = m * s
-func `*=`*(m: var AnyMat; s: Real) = m = m * s
+        result[i] = s*m[i]
+func `*`*[T: AnyMat](s: float32; m: T): T = m * s
+func `*=`*(m: var AnyMat; s: float32) = m = m * s
 
-func `/`*[T: AnyMat](m: T; s: Real): T {.noInit.} =
+func `/`*[T: AnyMat](m: T; s: float32): T {.noInit.} =
     for i in 0..<m.len:
-        result[i] = m[i] / s
-func `/`*[T: AnyMat](s: Real; m: T): T = m / s
-func `/=`*(m: var AnyMat; s: Real) = m = m / s
+        result[i] = m[i]/s
+func `/`*[T: AnyMat](s: float32; m: T): T = m / s
+func `/=`*(m: var AnyMat; s: float32) = m = m / s
 
-func scaled*[T: AnyMat](m: T; s: Real): T =
+func scaled*[T: AnyMat](m: T; s: float32): T =
     result = m
     for i in 0..<m.len:
         result[i, i] *= s
-func scale*[T: AnyMat](m: var T; s: Real) = m = m.scaled s
+func scale*[T: AnyMat](m: var T; s: float32) = m = m.scaled s
 
 func transposed*(m: Mat2): Mat2 =
     expand_alias m
@@ -173,17 +173,17 @@ func transposed*(m: Mat4): Mat4 =
 
 func transpose*(m: var (Mat2 | Mat3 | Mat4)) = m = transposed m
 
-func determinant*(m: Mat2): Real =
+func determinant*(m: Mat2): float32 =
     expand_alias m
     m00*m11 - m01*m10
 
-func determinant*(m: Mat3): Real =
+func determinant*(m: Mat3): float32 =
     expand_alias m
     m00*(m11*m22 - m12*m21) -
     m01*(m10*m22 - m12*m20) +
     m02*(m10*m21 - m11*m20)
 
-func determinant*(m: Mat4): Real =
+func determinant*(m: Mat4): float32 =
     expand_alias m
     let
         t0 = m22*m33 - m23*m32
@@ -197,7 +197,7 @@ func determinant*(m: Mat4): Real =
     m02*(m10*t1 - m11*t4 + m13*t5) -
     m03*(m10*t2 - m11*t3 + m12*t5)
 
-func det*(m: AnyMat): Real = determinant m
+func det*(m: AnyMat): float32 = determinant m
 
 func inverse*(m: Mat2): Option[Mat2] =
     let det = det m
@@ -374,7 +374,7 @@ func scale*(m: var Mat4; v: Vec3) =
 func scaled*(m: Mat3; v: Vec2): Mat3 = result = m; result.scale v
 func scaled*(m: Mat4; v: Vec3): Mat4 = result = m; result.scale v
 
-func rotation*(α: Real; v: Vec3): Transform3D =
+func rotation*(α: float32; v: Vec3): Transform3D =
     ## CCW rotation
     ## Axis vector needs to be normalized before rotation
     ngm_assert (v.mag =~ 1), "Axis vector should be normalized before rotation"
@@ -387,7 +387,7 @@ func rotation*(α: Real; v: Vec3): Transform3D =
      [v.z*v.x*ci - v.y*s, v.z*v.y*ci + v.x*s, v.z*v.z*ci + c    ],
      [0                 , 0                 , 0                 ]]
 
-func x_rotation*(α: Real): Transform3D =
+func x_rotation*(α: float32): Transform3D =
     let c = cos α
     let s = sin α
     [[1, 0,  0],
@@ -395,7 +395,7 @@ func x_rotation*(α: Real): Transform3D =
      [0, s,  c],
      [0, 0,  0]]
 
-func y_rotation*(α: Real): Transform3D =
+func y_rotation*(α: float32): Transform3D =
     let c = cos α
     let s = sin α
     [[ c, 0, s],
@@ -403,7 +403,7 @@ func y_rotation*(α: Real): Transform3D =
      [-s, 0, c],
      [ 0, 0, 0]]
 
-func z_rotation*(α: Real): Transform3D =
+func z_rotation*(α: float32): Transform3D =
     let c = cos α
     let s = sin α
     [[c, -s, 0],

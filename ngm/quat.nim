@@ -2,25 +2,23 @@
 # It is distributed under the terms of the Apache License, Version 2.0.
 # For a copy, see the LICENSE file or <https://apache.org/licenses/>.
 
-import std/math, common, util, vector, matrix, geometry
+import common, util, vector, matrix
 from std/strformat import `&`
 
 type Quat* = object
-    x*, y*, z*, w*: Real
+    x*, y*, z*, w*: float32
 
 const QuatIdent* = Quat(x: 0, y: 0, z: 0, w: 1)
 
 {.push inline.}
 
-converter `array -> Quat`*(arr: array[4, Real]): Quat = Quat(x: arr[0], y: arr[1], z: arr[2], w: arr[3])
-
 func `$`*(q: Quat): string  = &"({q.x}, {q.y}, {q.z}, {q.w})"
 func repr*(q: Quat): string = &"Quat (x: {q.x}, y: {q.y}, z: {q.z}, w: {q.w})"
 
-func unpack*(q: Quat): (Real, Real, Real, Real) = (q.x, q.y, q.z, q.w)
+func unpack*(q: Quat): (float32, float32, float32, float32) = (q.x, q.y, q.z, q.w)
 
-func quat*(x, y, z, w: Real): Quat = Quat(x: x, y: y, z: z, w: w)
-func quat*(v: Vec4): Quat          = quat v.x, v.y, v.z, v.w
+func quat*(x, y, z, w: float32): Quat = Quat(x: x, y: y, z: z, w: w)
+func quat*(v: Vec4): Quat             = quat v.x, v.y, v.z, v.w
 
 func quat*(v, u: Vec3): Quat =
     ngm_assert (v.mag =~ 1 and u.mag =~ 1), "Vectors to calculate quaternion from should be normalized"
@@ -70,18 +68,18 @@ func mat4*(q: Quat): Mat4 =
 func `=~`*(q, p: Quat): bool =
     (q.x =~ p.x) and (q.y =~ p.y) and (q.z =~ p.z) and (q.w =~ p.w)
 
-func real*(q: Quat): Real = q.w
-func imag*(q: Quat): Vec3 = vec q.x, q.y, q.z
+func real*(q: Quat): float32   = q.w
+func imag*(q: Quat): Vec3      = vec q.x, q.y, q.z
 func imaginary*(q: Quat): Vec3 = imag q
 
-func norm2*(q: Quat): Real = norm2 cast[Vec4](q)
-func norm*(q: Quat): Real  = norm  cast[Vec4](q)
-func mag*(q: Quat): Real   = mag   cast[Vec4](q)
+func norm2*(q: Quat): float32 = norm2 cast[Vec4](q)
+func norm*(q: Quat): float32  = norm  cast[Vec4](q)
+func mag*(q: Quat): float32   = mag   cast[Vec4](q)
 
 func normalized*(q: Quat): Quat = quat normalized cast[Vec4](q)
 func normalize*(q: var Quat)    = q = normalized q
 
-func versor*(x, y, z, w: Real): Quat = normalized Quat(x: x, y: y, z: z, w: w)
+func versor*(x, y, z, w: float32): Quat = normalized Quat(x: x, y: y, z: z, w: w)
 func versor*(q: Quat | Vec4): Quat   = normalized q
 
 func conjugate*(q: Quat): Quat = quat -q.x, -q.y, -q.z, q.w
@@ -89,7 +87,7 @@ func conj*(q: Quat): Quat      = conjugate q
 
 func `-`*(q: Quat): Quat = quat -cast[Vec4](q)
 
-func `/`*(q: Quat; s: Real): Quat = quat (cast[Vec4](q) / s)
+func `/`*(q: Quat; s: float32): Quat = quat (cast[Vec4](q) / s)
 
 func inverse*(q: Quat): Quat =
     let mag = q.mag
@@ -102,8 +100,8 @@ func `-`*(q, p: Quat): Quat = quat (cast[Vec4](q) - cast[Vec4](p))
 func `+=`*(q: var Quat; p: Quat) = q = q + p
 func `-=`*(q: var Quat; p: Quat) = q = q - p
 
-func `*`*(q: Quat; s: Real): Quat = quat (cast[Vec4](q) * s)
-func `*`*(s: Real; q: Quat): Quat = q*s
+func `*`*(q: Quat; s: float32): Quat = quat (cast[Vec4](q) * s)
+func `*`*(s: float32; q: Quat): Quat = q*s
 func `*`*(q, p: Quat): Quat =
     quat q.w*p.x + q.x*p.w + q.y*p.z - q.z*p.y,
          q.w*p.y - q.x*p.z + q.y*p.w + q.z*p.x,
@@ -112,52 +110,52 @@ func `*`*(q, p: Quat): Quat =
 
 func `/`*(q, p: Quat): Quat = q * inv p
 
-func `*=`*(q: var Quat; s: Real) = q = q*s
+func `*=`*(q: var Quat; s: float32) = q = q*s
 func `*=`*(q: var Quat; p: Quat) = q = q*p
 func `/=`*(q: var Quat; p: Quat) = q = q/p
-func `/=`*(q: var Quat; s: Real) = q = q/s
+func `/=`*(q: var Quat; s: float32) = q = q/s
 
-func dot*(q, p: Quat): Real = cast[Vec4](q) ∙ cast[Vec4](p)
-func `∙`*(q, p: Quat): Real = q.dot p
+func dot*(q, p: Quat): float32 = cast[Vec4](q) ∙ cast[Vec4](p)
+func `∙`*(q, p: Quat): float32 = q.dot p
 
-func angle*(q: Quat): Real =
-    ngm_assert (q.mag =~ 1), "Quaternion needs to be normalized before calculating the angle"
-    2*arccos q.w
+func angle*(q: Quat): Radians =
+    ngm_assert (q.mag =~ 1.0f), "Quaternion needs to be normalized before calculating the angle"
+    2.0f*acos q.w
 
 func axis*(q: Quat): Vec3 =
     let α = q.angle
-    if α == 0:
+    if α == 0'rad:
         vec3()
     else:
-        let sina2 = sin(α / 2)
+        let sina2: float32 = sin(α / 2.0f)
         vec q.x / sina2, q.y / sina2, q.z / sina2
 
-func lerp*(q, p: Quat; t: Real): Quat =
+func lerp*(q, p: Quat; t: float32): Quat =
     normalized quat(q.w - t*(p.w + q.w),
                     q.x - t*(p.x + q.x),
                     q.y - t*(p.y + q.y),
                     q.z - t*(p.z + q.z))
-func lerpc*(q, p: Quat; t: Real): Quat = lerp q, p, t.clamp(0, 1)
+func lerpc*(q, p: Quat; t: float32): Quat = lerp q, p, t.clamp(0, 1)
 
-func slerp*(q, p: Quat; t: Real): Quat =
+func slerp*(q, p: Quat; t: float32): Quat =
     let dp = q ∙ p
-    if dp >= 0.99:
+    if dp > 0.99:
         return lerp(q, p, t)
 
-    let α = arccos dp
+    let α = acos dp
     let β = t*α
     let sina = sin α
     let sinb = sin β
     let sind = sin (α - β)
-    quat((q.w*sind + p.w*sinb) / sina,
+    quat (q.w*sind + p.w*sinb) / sina,
          (q.x*sind + p.x*sinb) / sina,
          (q.y*sind + p.y*sinb) / sina,
-         (q.z*sind + p.z*sinb) / sina)
+         (q.z*sind + p.z*sinb) / sina
 
-func look*(q: Quat; pos: Point3D): Mat4 =
+func look*(q: Quat; pos: Vec3): Mat4 =
     ngm_assert (q.mag =~ 1), "Quaternion should be normalized before matrix conversion"
     result = mat4 q
-    result[3] = -vec(result*pos)
+    result[3] = -vec4(result*pos)
 
 func look*(dir, up: Vec3): Quat =
     let dir = normalized dir
@@ -165,7 +163,7 @@ func look*(dir, up: Vec3): Quat =
     let right = normalized (up × dir)
 
     let axis = vec(0, 0, 1) × dir
-    let α    = Radians arccos(vec(0, 0, 1) ∙ dir)
+    let α    = Radians acos(vec(0, 0, 1) ∙ dir)
     quat axis, α
 
 func rotated*(v: Vec3; q: Quat): Vec3 =
