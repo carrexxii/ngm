@@ -1,4 +1,4 @@
-import std/[unittest, options, math], ngm
+import std/[unittest, options, math], ngm, ngm/pga, ngm/complex
 
 # TODO: randomized tests
 
@@ -45,3 +45,6 @@ suite "Dual Quaternions":
 
 suite "PGA":
     include pga
+
+suite "Complex":
+    include complex

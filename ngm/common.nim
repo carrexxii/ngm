@@ -12,4 +12,4 @@ template ngm_assert*(cond, body) =
         assert cond, body
 
 func `=~`*(a, b: SomeFloat): bool = almost_equal(a, b)
-template `!=~`*(a, b: SomeFloat): bool = not (a =~ b)
+template `!=~`*(a, b: typed): bool {.dirty.} = not (a =~ b)
