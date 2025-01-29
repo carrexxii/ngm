@@ -12,10 +12,14 @@ type
     DVec3* = array[3, float]
     DVec4* = array[4, float]
 
-    AVec* = Vec2 | Vec3 | Vec4 | DVec2 | DVec3 | DVec4
-    AVec2*  = Vec2 | DVec2
-    AVec3*  = Vec3 | DVec3
-    AVec4*  = Vec4 | DVec4
+    AVec*  = Vec2 | Vec3 | Vec4 | DVec2 | DVec3 | DVec4
+    AVec2* = Vec2 | DVec2
+    AVec3* = Vec3 | DVec3
+    AVec4* = Vec4 | DVec4
+
+const VectorFields = ["xyzw"]
+type Swizzleable = AVec
+include swizzle
 
 const
     Vec2Zero*  = [float32 0, 0]
@@ -24,9 +28,6 @@ const
     DVec2Zero* = [float 0, 0]
     DVec3Zero* = [float 0, 0, 0]
     DVec4Zero* = [float 0, 0, 0, 0]
-
-import swizzle
-export swizzle
 
 {.push inline.}
 
@@ -37,14 +38,12 @@ converter vec2_to_dvec2*(v: Vec2): DVec2 = [float v.x, float v.y]
 converter vec3_to_dvec3*(v: Vec3): DVec3 = [float v.x, float v.y, float v.z]
 converter vec4_to_dvec4*(v: Vec4): DVec4 = [float v.x, float v.y, float v.z, float v.w]
 
-{.push warning[ImplicitDefaultValue]:off.}
 func vec2*(x, y: float32 = 0): Vec2       = [x, y]
 func vec3*(x, y, z: float32 = 0): Vec3    = [x, y, z]
 func vec4*(x, y, z, w: float32 = 0): Vec4 = [x, y, z, w]
 func dvec2*(x, y: float = 0): DVec2       = [x, y]
 func dvec3*(x, y, z: float = 0): DVec3    = [x, y, z]
 func dvec4*(x, y, z, w: float = 0): DVec4 = [x, y, z, w]
-{.pop.}
 
 func vec4*(v: Vec3; w: float32 = 1): Vec4 = vec4 v.x, v.y, v.z, w
 func vec3*(v: Vec2; z: float32 = 0): Vec4 = vec4 v.x, v.y, z

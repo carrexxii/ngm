@@ -48,3 +48,6 @@ suite "PGA":
 
 suite "Complex":
     include complex
+
+suite "Colours":
+    include colours

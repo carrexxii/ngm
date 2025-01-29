@@ -4,17 +4,18 @@
 
 {.experimental: "dotOperators".}
 
-import std/macros, common, vector
+import std/macros, common
 from std/sequtils import map_it, zip
 
-const VectorFields = "xyzw"
-
 func to_inds(fields: string): seq[int] =
-    result = fields.map_it VectorFields.find it
-    assert -1 notin result:
-        &"\nInvalid swizzle fields for vector: '{fields}'. Valid fields include '{VectorFields}' ({fields} -> {result})"
+    for f in VectorFields:
+        result = fields.map_it f.find it
+        if -1 notin result:
+            return result
 
-macro `.`*(v: AVec; fields: untyped): untyped =
+    error &"Invalid swizzle fields for vector: '{fields}'. Valid fields include '{VectorFields}'"
+
+macro `.`*(v: Swizzleable; fields: untyped): untyped =
     let inds = to_inds fields.repr
     if inds.len == 1:
         let i = inds[0]
@@ -27,18 +28,17 @@ macro `.`*(v: AVec; fields: untyped): untyped =
             result.add quote do:
                 `v`[`i`]
 
-# TODO: nnkIfExpr
-macro `.=`*(v: AVec; fields, rhs: untyped): untyped =
+# TODO: nnkIfExpr, nnkCall
+macro `.=`*(v: Swizzleable; fields, rhs: untyped): untyped =
     let (lhs_count, lhs_inds) = (fields.repr.len, to_inds fields.repr)
     let (rhs_count, rhs_inds) = case rhs.kind
         of nnkIntLit, nnkFloatLit    : (1, @[])
         of nnkTupleConstr, nnkBracket: (rhs.len, to_inds fields.repr)
         of nnkDotExpr                : (rhs[1].repr.len, to_inds rhs[1].repr)
         else:
-            echo &"Invalid node kind for RHS of vector `.=`: '{rhs.kind}'"
-            quit 1
-    assert lhs_count == rhs_count:
-        &"Mismatched field count for vector `.=`: {lhs_count} LHS != {rhs_count} RHS"
+            error &"Invalid node kind for RHS of vector `.=`: '{rhs.kind}'"
+    if lhs_count != rhs_count:
+        error &"Mismatched field count for vector `.=`: {lhs_count} LHS != {rhs_count} RHS"
 
     if lhs_count == 1:
         let i = lhs_inds[0]
