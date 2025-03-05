@@ -5,7 +5,7 @@
 import std/[enumerate, with, math]
 from std/os        import `/`, `/../`, parent_dir
 from std/strformat import `&`
-export enumerate, with, sqrt, pow, `&`, `/`, `^`
+export enumerate, with, sqrt, pow, trunc, round, ceil, floor, `&`, `/`, `^`
 
 template ngm_assert*(cond, body) =
     when not defined NgmNoAssert:

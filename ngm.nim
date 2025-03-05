@@ -6,3 +6,6 @@ export      util, vector, matrix, quat, dquat, geometry, interpolation, camera, 
 
 import ngm/common
 export common.`=~`
+
+import std/math
+export sqrt, pow, trunc, round, ceil, floor, `^`

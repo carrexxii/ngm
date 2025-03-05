@@ -57,3 +57,5 @@ func sign*(x: SomeNumber): int32 =
     if x > 0: 1 elif x < 0: -1 else: 0
 
 {.pop.}
+
+# TODO: k/ki, M/Mi, G/Gi, etc

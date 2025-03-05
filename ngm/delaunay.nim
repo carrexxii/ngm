@@ -7,27 +7,27 @@
 ##   The implementation of [is_in_circum_circle] is broken
 
 import common, util, vector, geometry
-from std/algorithm import sorted
+from std/algorithm import sort
 from std/sequtils  import to_seq
 
 type QuadEdge = object
-    origin: Vec2
+    origin: DVec2
     rot   : ptr QuadEdge
     onext : ptr QuadEdge
     used  : bool
 
-func cross(p, q: Vec2): float32 =
+func cross(p, q: DVec2): float32 =
     p.x*q.y - p.y*q.x
 
-func cross(p, q, r: Vec2): float32 =
+func cross(p, q, r: DVec2): float32 =
     cross q - p, r - p
 
 func rev(e: ptr QuadEdge): ptr QuadEdge   = e.rot.rot
 func lnext(e: ptr QuadEdge): ptr QuadEdge = e.rot.rev.onext.rot
 func oprev(e: ptr QuadEdge): ptr QuadEdge = e.rot.onext.rot
-func dest(e: ptr QuadEdge): Vec2          = e.rev.origin
+func dest(e: ptr QuadEdge): DVec2          = e.rev.origin
 
-proc create_edge(p, q: Vec2): ptr QuadEdge =
+proc create_edge(p, q: DVec2): ptr QuadEdge =
     var e1 = cast[ptr QuadEdge](alloc0 sizeof QuadEdge)
     var e2 = cast[ptr QuadEdge](alloc0 sizeof QuadEdge)
     var e3 = cast[ptr QuadEdge](alloc0 sizeof QuadEdge)
@@ -67,13 +67,13 @@ proc connect(e1, e2: ptr QuadEdge): ptr QuadEdge =
     splice result, e1.lnext
     splice result.rev, e2
 
-func is_left_of(p: Vec2; e: ptr QuadEdge): bool =
+func is_left_of(p: DVec2; e: ptr QuadEdge): bool =
     p.cross(e.origin, e.dest) > 0
 
-func is_right_of(p: Vec2; e: ptr QuadEdge): bool =
+func is_right_of(p: DVec2; e: ptr QuadEdge): bool =
     p.cross(e.origin, e.dest) < 0
 
-func is_in_circum_circle(q, a, b, c: Vec2): bool =
+func is_in_circum_circle(q, a, b, c: DVec2): bool =
     assert area2(a, b, c) > 0
     let
         ax = a.x - q.x
@@ -86,7 +86,7 @@ func is_in_circum_circle(q, a, b, c: Vec2): bool =
      (bx*bx + by*by)*(ax*cy - cx*ay) +
      (cx*cx + cy*cy)*(ax*by - bx*ay)) < -0.1
 
-proc triangulate(pts: openArray[Vec2]; l, r: int): tuple[e1, e2: ptr QuadEdge] =
+proc triangulate(pts: openArray[DVec2]; l, r: int): tuple[e1, e2: ptr QuadEdge] =
     if r - l + 1 == 2:
         let res = create_edge(pts[l], pts[r])
         return (res, res.rev)
@@ -146,16 +146,16 @@ proc triangulate(pts: openArray[Vec2]; l, r: int): tuple[e1, e2: ptr QuadEdge] =
 
     return (ldo, rdo)
 
-proc delaunay*(pts: openArray[Vec2]; is_sorted = false): seq[Vec2] =
-    var pts =
-        if not is_sorted:
-            pts.sorted (proc(a, b: Vec2): int =
-                result = int sign(a.x - b.x)
-                if result == 0:
-                    result = int sign(a.y - b.y)
-            )
-        else:
-            to_seq pts
+proc delaunay*(pts_in: openArray[Vec2]; is_sorted = false): seq[Vec2] =
+    var pts = new_seq_of_cap[DVec2] pts_in.len
+    for pt in pts_in:
+        pts.add pt
+    if not is_sorted:
+        pts.sort (proc(a, b: DVec2): int =
+            result = int sign(a.x - b.x)
+            if result == 0:
+                result = int sign(a.y - b.y)
+        )
     let res = pts.triangulate(0, pts.len - 1)
     var e   = res.e1
     var edges = @[e]

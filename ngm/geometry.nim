@@ -5,6 +5,9 @@
 import common, util, vector, matrix
 
 type
+    Polyline*  = seq[Vec2]
+    DPolyline* = seq[DVec2]
+
     Circle* = object
         pos*: Vec2
         r*  : float32
@@ -22,6 +25,8 @@ type
         x*, y*, z*: float32
         w*, h*, d*: float32
 
+# TODO: change objects here to work with swizzling
+
 converter rect_to_array*(r: Rect): array[4, float32] = [r.x, r.y, r.w, r.h]
 
 {.push inline.}
@@ -29,9 +34,11 @@ converter rect_to_array*(r: Rect): array[4, float32] = [r.x, r.y, r.w, r.h]
 func `$`*(r: Rect): string  = &"({r.x}, {r.y}, {r.w}, {r.h})"
 func repr*(r: Rect): string = &"Rect (x: {r.x}, y: {r.y}, w: {r.w}, h: {r.h})"
 
-func rect*(x: SomeNumber, y: SomeNumber, w: SomeNumber, h: SomeNumber): Rect =
-    Rect(x: float32 x, y: float32 y, w: float32 w, h: float32 h)
+func rect*(x, y, w, h: SomeNumber): Rect = Rect(x: float32 x, y: float32 y, w: float32 w, h: float32 h)
 func rect*(p1, p2: Vec2): Rect = rect p1.x, p1.y, p2.x - p1.x, p2.y - p1.y
+
+func trunc*(r: Rect): Rect = rect trunc r.x, trunc r.y, trunc r.w, trunc r.h
+func round*(r: Rect): Rect = rect round r.x, round r.y, round r.w, round r.h
 
 func `==`*(r1, r2: Rect): bool = (r1.x == r2.x) and (r1.y == r2.y) and (r1.w == r2.w) and (r1.h == r2.h)
 func `=~`*(r1, r2: Rect): bool = (r1.x =~ r2.x) and (r1.y =~ r2.y) and (r1.w =~ r2.w) and (r1.h =~ r2.h)
@@ -46,6 +53,15 @@ func `+=`*(r: var Rect; v: Vec2) = r = r + v
 func `-=`*(r: var Rect; v: Vec2) = r = r - v
 func `*=`*(r: var Rect; s: float32) = r = r*s
 func `/=`*(r: var Rect; s: float32) = r = r/s
+
+func pos*(r: Rect): Vec2 = vec r.x, r.y
+func `pos=`*(r: var Rect; pos: Vec2) =
+    r.x = pos.x
+    r.y = pos.y
+func sz*(r: Rect): Vec2 = vec r.w, r.h
+func `sz=`*(r: var Rect; sz: Vec2) =
+    r.w = sz.x
+    r.h = sz.y
 
 func centre*(r: Rect): Vec2 = [r.x + r.w/2, r.y + r.h/2]
 
@@ -77,6 +93,24 @@ func contains*(r: Rect; p: Vec2): bool =
     (p.x >= r.x) and (p.x <= r.x + r.w) and
     (p.y >= r.y) and (p.y <= r.y + r.h)
 
+func expand*(r: var Rect; v: Vec2) =
+    r = rect(r.x - v.x, r.y - v.y, r.w + v.x, r.h + v.y)
+func expanded*(r: Rect; v: Vec2): Rect =
+    result = r
+    result.expand v
+
+func vcentre*(r: var Rect; h: float32) =
+    if h > r.h:
+        r.y += 0.5*(h - r.h)
+func vcentred*(r: Rect; h: float32): Rect =
+    result = r
+    result.vcentre h
+
+func bottom_right*(r: Rect; sz: Vec2): Rect =
+    rect(r.x + r.w - sz.x,
+         r.y + r.h - sz.y,
+         sz.x, sz.y)
+
 #[ -------------------------------------------------------------------- ]#
 
 func area2*(p, q, r: Vec2): float32 =
@@ -85,8 +119,3 @@ func area2*(p, q, r: Vec2): float32 =
 func area*(p, q, r: Vec2): float32 = 0.5*area2(p, q, r)
 
 {.pop.}
-
-when defined NgmMode2D:
-    type Point* = Point2D
-elif defined NgmMode3D:
-    type Point* = Point3D

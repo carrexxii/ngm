@@ -28,7 +28,7 @@ macro `.`*(v: Swizzleable; fields: untyped): untyped =
             result.add quote do:
                 `v`[`i`]
 
-# TODO: nnkIfExpr, nnkCall
+# TODO: nnkIfExpr, nnkCall, nnkSym (NaN)
 macro `.=`*(v: Swizzleable; fields, rhs: untyped): untyped =
     let (lhs_count, lhs_inds) = (fields.repr.len, to_inds fields.repr)
     let (rhs_count, rhs_inds) = case rhs.kind

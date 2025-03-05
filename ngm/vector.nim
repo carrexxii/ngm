@@ -38,12 +38,14 @@ converter vec2_to_dvec2*(v: Vec2): DVec2 = [float v.x, float v.y]
 converter vec3_to_dvec3*(v: Vec3): DVec3 = [float v.x, float v.y, float v.z]
 converter vec4_to_dvec4*(v: Vec4): DVec4 = [float v.x, float v.y, float v.z, float v.w]
 
+{.push warning[ImplicitDefaultValue]: off.}
 func vec2*(x, y: float32 = 0): Vec2       = [x, y]
 func vec3*(x, y, z: float32 = 0): Vec3    = [x, y, z]
 func vec4*(x, y, z, w: float32 = 0): Vec4 = [x, y, z, w]
 func dvec2*(x, y: float = 0): DVec2       = [x, y]
 func dvec3*(x, y, z: float = 0): DVec3    = [x, y, z]
 func dvec4*(x, y, z, w: float = 0): DVec4 = [x, y, z, w]
+{.pop.}
 
 func vec4*(v: Vec3; w: float32 = 1): Vec4 = vec4 v.x, v.y, v.z, w
 func vec3*(v: Vec2; z: float32 = 0): Vec4 = vec4 v.x, v.y, z
@@ -85,6 +87,14 @@ func clamped*[T: AVec4](v: T; min, max: T): T = [v.x.clamp(min.x, max.x), v.y.cl
 
 func clamp*[T: AVec](v: var T; min, max: SomeFloat) = v = v.clamped(min, max)
 func clamp*[T: AVec](v: var T; min, max: T)         = v = v.clamped(min, max)
+
+func trunc*[T: AVec2](v: T): T = [trunc v[0], trunc v[1]]
+func trunc*[T: AVec3](v: T): T = [trunc v[0], trunc v[1], trunc v[2]]
+func trunc*[T: AVec4](v: T): T = [trunc v[0], trunc v[1], trunc v[2], trunc v[3]]
+
+func round*[T: AVec2](v: T): T = [round v[0], round v[1]]
+func round*[T: AVec3](v: T): T = [round v[0], round v[1], round v[2]]
+func round*[T: AVec4](v: T): T = [round v[0], round v[1], round v[2], round v[3]]
 
 func `-`*[T: AVec2](v: T): T = [-v.x, -v.y]
 func `-`*[T: AVec3](v: T): T = [-v.x, -v.y, -v.z]

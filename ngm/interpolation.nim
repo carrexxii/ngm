@@ -2,8 +2,8 @@ import std/math, common, util, quat, dquat
 
 {.push inline.}
 
-func lerp*[T: SomeFloat](a, b, t: T): T =
-    a + t*(b - a)
+func lerp*[T: SomeFloat](a, b, t: T): T        = a + t*(b - a)
+func lerp*[T: SomeFloat](r: Slice[T]; t: T): T = lerp r.a, r.b, t
 
 func step*[T: SomeFloat](x: T; r = 0.0..1.0): T =
     if x < r.b:
