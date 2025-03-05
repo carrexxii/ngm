@@ -52,7 +52,7 @@
 ## | `g ∨ (l ∧ g★)` | Centrally project `l` onto `g`                         |
 ##
 
-import common, geometry, vector
+import common, vector
 
 type
     Bivec2D* = object
@@ -133,14 +133,14 @@ func bulk*(p: Vec3    ): Vec3     = [p.x, p.y, 0]
 func bulk*(p: Vec2    ): Vec3     = [p.x, p.y, 0]
 func bulk*(l: Bivec2D ): Bivec2D  = bivec l.x, l.y, 0
 func bulk*(p: Vec4    ): Vec4     = [p.x, p.y, p.z, 0]
-func bulk*(l: Bivec3D ): Bivec3D  = bivec Vec3Zero, l.m
+func bulk*(l: Bivec3D ): Bivec3D  = bivec default Vec3, l.m
 func bulk*(g: Trivec3D): Trivec3D = trivec 0, 0, 0, g.w
 
 func weight*(p: Vec3    ): Vec3     = [float32 0, 0, p.w]
 func weight*(p: Vec2    ): Vec3     = [float32 0, 0, 1]
 func weight*(l: Bivec2D ): Bivec2D  = bivec 0, 0, l.w
 func weight*(p: Vec4    ): Vec4     = [float32 0, 0, 0, p.w]
-func weight*(l: Bivec3D ): Bivec3D  = bivec l.v, Vec3Zero
+func weight*(l: Bivec3D ): Bivec3D  = bivec l.v, default Vec3
 func weight*(g: Trivec3D): Trivec3D = trivec g.x, g.y, g.z, 0
 
 func bulk_dual*(x: Blade): auto   = right_complement bulk x
@@ -163,7 +163,7 @@ func weight_norm*(g: Trivec3D): Antiscalar3D = AntiScalar3D norm [g.x, g.y, g.z]
 func attitude*(p: Vec4    ): float32    = p.w
 func attitude*(p: Vec3    ): float32    = 1
 func attitude*(l: Bivec3D ): Vec4    = [l.v.x, l.v.y, l.v.z, 0]
-func attitude*(g: Trivec3D): Bivec3D = bivec Vec3Zero, [g.x, g.y, g.z]
+func attitude*(g: Trivec3D): Bivec3D = bivec default Vec3, [g.x, g.y, g.z]
 
 func `★`*(p: Vec3    ): Bivec2D  = bulk_dual p
 func `★`*(p: Vec2    ): Bivec2D  = bulk_dual p

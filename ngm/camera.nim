@@ -149,8 +149,8 @@ func yaw*(cam: var Camera3D; α: Radians)   = cam.dir.rotate α, cam.up
 func pitch*(cam: var Camera3D; α: Radians) = cam.dir.rotate α, cam.right
 func roll*(cam: var Camera3D; α: Radians)  = cam.up.rotate  α, cam.dir
 
-func create_camera2d*(pos        = vec2(0, 0);
-                      dir        = vec2(0, 0);
+func create_camera2d*(pos        = vec(0, 0);
+                      dir        = vec(0, 0);
                       rot        = 0.0'rad;
                       zoom       = 0.5;
                       zoom_max   = 3000.0;

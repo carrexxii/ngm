@@ -28,8 +28,8 @@ suite "General":
             lerp(r1, r2, 0.3) == rad (2.13*0.7 + 0.14*0.3)
             lerp(d1, d2, 0.7) == deg (172*0.3 + 37*0.7)
 
-suite "Geometry":
-    include geometry
+suite "Rect":
+    include rect
 
 suite "Vectors":
     include vector

@@ -16,7 +16,6 @@ const DQuatIdent* = DQuat(real: quat(0'f32, 0, 0, 1),
 converter quat_array_to_dquat*(arr: array[2, Quat]): DQuat = DQuat(real: arr[0], dual: arr[1])
 
 func `$`*(q: DQuat): string  = &"[{q.real}; {q.dual}]"
-func repr*(q: DQuat): string = &"DQuat [real: {repr q.real}; dual: {repr q.dual}]"
 
 func `==`*(q, p: DQuat): bool = (q.real == p.real) and (q.dual == p.dual)
 func `=~`*(q, p: DQuat): bool = (q.real =~ p.real) and (q.dual =~ p.dual)
@@ -72,16 +71,7 @@ func dquat*(q: Quat; t: Vec3): DQuat =
     let r = normalized q
     DQuat(real: r, dual: quat(t.x, t.y, t.z, 0)*r*0.5)
 
-func mat*(q: DQuat): Transform3D =
-    let q = normalized q
-    let (x, y, z, w) = unpack q.real
-    let t = 2*q.dual*(conj q.real)
-    [[w*w + x*x - y*y - z*z, 2*x*y + 2*w*z        , 2*x*z - 2*w*y        ],
-     [2*x*y - 2*w*z        , w*w + y*y - x*x - z*z, 2*y*z + 2*w*x        ],
-     [2*x*z + 2*w*y        , 2*y*z - 2*w*x        , w*w + z*z - x*x - y*y],
-     [t.x                  , t.y                  , t.z                  ]]
-
-func mat4*(q: DQuat): Mat4 =
+func mat*(q: DQuat): Mat4 =
     let q = normalized q
     let (x, y, z, w) = unpack q.real
     let t = 2*q.dual*(conj q.real)

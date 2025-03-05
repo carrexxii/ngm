@@ -5,6 +5,7 @@
 import common, util, vector, matrix
 from std/strformat import `&`
 
+# TODO: distinct Vec4
 type Quat* = object
     x*, y*, z*, w*: float32
 
@@ -12,8 +13,7 @@ const QuatIdent* = Quat(x: 0, y: 0, z: 0, w: 1)
 
 {.push inline.}
 
-func `$`*(q: Quat): string  = &"({q.x}, {q.y}, {q.z}, {q.w})"
-func repr*(q: Quat): string = &"Quat (x: {q.x}, y: {q.y}, z: {q.z}, w: {q.w})"
+func `$`*(q: Quat): string = &"[{q.x}, {q.y}, {q.z}, {q.w}]"
 
 func unpack*(q: Quat): (float32, float32, float32, float32) = (q.x, q.y, q.z, q.w)
 
@@ -43,15 +43,15 @@ func quat*(v: Vec3; α: Radians): Quat =
 
 func vec3*(q: Quat): Vec3 = vec q.x, q.y, q.z
 
-func mat*(q: Quat; pos = vec3()): Transform3D =
+func mat*(q: Quat; pos = default Vec3): Mat4 =
     let x = q.x
     let y = q.y
     let z = q.z
     let w = q.w
-    [[1 - 2*(y*y + z*z),     2*(x*y - z*w),     2*(x*z + y*w)],
-     [    2*(x*y + z*w), 1 - 2*(x*x + z*z),     2*(y*z - x*w)],
-     [    2*(x*z - y*w),     2*(y*z + x*w), 1 - 2*(x*x + y*y)],
-     [pos.x            , pos.y            , pos.z            ]]
+    [[1 - 2*(y*y + z*z),     2*(x*y - z*w),     2*(x*z + y*w), 0],
+     [    2*(x*y + z*w), 1 - 2*(x*x + z*z),     2*(y*z - x*w), 0],
+     [    2*(x*z - y*w),     2*(y*z + x*w), 1 - 2*(x*x + y*y), 0],
+     [pos.x            , pos.y            , pos.z            , 1]]
 
 func mat3*(q: Quat): Mat3 =
     mat3 mat q
@@ -80,7 +80,7 @@ func normalized*(q: Quat): Quat = quat normalized cast[Vec4](q)
 func normalize*(q: var Quat)    = q = normalized q
 
 func versor*(x, y, z, w: float32): Quat = normalized Quat(x: x, y: y, z: z, w: w)
-func versor*(q: Quat | Vec4): Quat   = normalized q
+func versor*(q: Quat | Vec4): Quat      = normalized q
 
 func conjugate*(q: Quat): Quat = quat -q.x, -q.y, -q.z, q.w
 func conj*(q: Quat): Quat      = conjugate q
@@ -125,7 +125,7 @@ func angle*(q: Quat): Radians =
 func axis*(q: Quat): Vec3 =
     let α = q.angle
     if α == 0'rad:
-        vec3()
+        default Vec3
     else:
         let sina2: float32 = sin(α / 2.0f)
         vec q.x / sina2, q.y / sina2, q.z / sina2
@@ -152,17 +152,17 @@ func slerp*(q, p: Quat; t: float32): Quat =
          (q.y*sind + p.y*sinb) / sina,
          (q.z*sind + p.z*sinb) / sina
 
-func look*(q: Quat; pos: Vec3): Mat4 =
-    ngm_assert (q.mag =~ 1), "Quaternion should be normalized before matrix conversion"
-    result = mat4 q
-    result[3] = -vec4(result*pos)
+# func look*(q: Quat; pos: Vec3): Mat4 =
+#     ngm_assert (q.mag =~ 1), "Quaternion should be normalized before matrix conversion"
+#     result = mat4 q
+#     result[3] = -vec4(result*pos)
 
 func look*(dir, up: Vec3): Quat =
     let dir = normalized dir
     let up  = normalized up
     let right = normalized (up × dir)
 
-    let axis = vec(0, 0, 1) × dir
+    let axis = [0'f32, 0, 1] × dir
     let α    = Radians acos(vec(0, 0, 1) ∙ dir)
     quat axis, α
 
@@ -172,14 +172,10 @@ func rotated*(v: Vec3; q: Quat): Vec3 =
     let q_inv = conj q # inv == conj for versors
     vec3 q*vq*q_inv
 
-func rotated*(m: Transform3D; q: Quat): Transform3D =
-    let tform = mat q
-    m*tform
 func rotated*(m: Mat4; q: Quat): Mat4 =
-    let tform = mat4 q
-    m*tform
-func rotate*(v: var Vec3; q: Quat)        = v = v.rotated q
-func rotate*(m: var Transform3D; q: Quat) = m = m.rotated q
-func rotate*(m: var Mat4; q: Quat)        = m = m.rotated q
+    let tform = mat q
+    m * tform
+func rotate*(v: var Vec3; q: Quat) = v = v.rotated q
+func rotate*(m: var Mat4; q: Quat) = m = m.rotated q
 
 {.pop.}

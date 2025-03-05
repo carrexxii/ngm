@@ -1,6 +1,6 @@
 test "Basics":
     var
-        v = vec3()
+        v = default Vec3
         u = vec(1, 2, 3)
         w = vec(3, 5, 7)
         s = vec(3, 4)

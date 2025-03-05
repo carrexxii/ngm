@@ -6,14 +6,22 @@ import std/[macros, enumerate, options, math], common, vector
 from std/strutils import join, `%`
 
 type
-    Mat2* = array[2, Vec2]
-    Mat3* = array[3, Vec3]
-    Mat4* = array[4, Vec4]
+    AMat2*[T] = array[2, AVec2[T]]
+    AMat3*[T] = array[3, AVec3[T]]
+    AMat4*[T] = array[4, AVec4[T]]
 
-    Transform2D* = array[3, Vec2] ## Missing row is assumed to be [0, 0, 1]
-    Transform3D* = array[4, Vec3] ## Missing row is assumed to be [0, 0, 0, 1]
+    Mat2F32* = AMat2[float32]
+    Mat3F32* = AMat3[float32]
+    Mat4F32* = AMat4[float32]
+    Mat2F64* = AMat2[float64]
+    Mat3F64* = AMat3[float64]
+    Mat4F64* = AMat4[float64]
 
-    AnyMat* = Mat2 | Mat3 | Mat4 | Transform2D | Transform3D
+    Mat2* = Mat2F32
+    Mat3* = Mat3F32
+    Mat4* = Mat4F32
+
+    AMat* = AMat2 | AMat3 | AMat4
 
 const
     Mat2Ident*: Mat2 = [[1, 0],
@@ -25,51 +33,31 @@ const
                         [0, 1, 0, 0],
                         [0, 0, 1, 0],
                         [0, 0, 0, 1]]
-    Transform2DIdent*: Transform2D = [[1, 0],
-                                      [0, 1],
-                                      [0, 0]]
-    Transform3DIdent*: Transform3D = [[1, 0, 0],
-                                      [0, 1, 0],
-                                      [0, 0, 1],
-                                      [0, 0, 0]]
 
 {.push inline.}
 
-func `$`*(m: AnyMat): string = "[" & (m.join ",\n ") & "]"
+func `$`*(m: AMat): string = "[" & (m.join ",\n ") & "]"
 
-func `[]`*(m: AnyMat; j, i: int): float32         = m[j][i]
-func `[]`*(m: var AnyMat; j, i: int): var float32 = m[j][i]
-func `[]=`*(m: var AnyMat; j, i: int; s: float32) = m[j][i] = s
+func `[]`*(m: AMat; j, i: int): float32         = m[j][i]
+func `[]`*(m: var AMat; j, i: int): var float32 = m[j][i]
+func `[]=`*(m: var AMat; j, i: int; s: float32) = m[j][i] = s
 
 func mat*(v1, v2: Vec2): Mat2         = [v1, v2]
 func mat*(v1, v2, v3: Vec3): Mat3     = [v1, v2, v3]
 func mat*(v1, v2, v3, v4: Vec4): Mat4 = [v1, v2, v3, v4]
 
-func mat3*(m: Transform2D): Mat3 = [[m[0, 0], m[0, 1], 0],
-                                    [m[1, 0], m[1, 1], 0],
-                                    [m[2, 0], m[2, 1], 1]]
-func mat4*(m: Transform3D): Mat4 = [[m[0, 0], m[0, 1], m[0, 2], 0],
-                                    [m[1, 0], m[1, 1], m[1, 2], 0],
-                                    [m[2, 0], m[2, 1], m[2, 2], 0],
-                                    [m[3, 0], m[3, 1], m[3, 2], 1]]
+func mat3*(m: Mat4): Mat3 = [m[0].xyz, m[1].xyz, m[2].xyz]
 
-func mat3*(m: Mat4 | Transform3D): Mat3 = [m[0].xyz, m[1].xyz, m[2].xyz]
-
-func tform*(v1, v2, v3: Vec2): Transform2D     = [v1, v2, v3]
-func tform*(v1, v2, v3, v4: Vec3): Transform3D = [v1, v2, v3, v4]
-
-func matrix_size(T: string): (int, int) =
+func matrix_size(T: string): (int, int) {.compileTime.} =
     case T
-    of $Mat2       : (2, 2)
-    of $Mat3       : (3, 3)
-    of $Mat4       : (4, 4)
-    of $Transform2D: (2, 3)
-    of $Transform3D: (3, 4)
+    of $Mat2: (2, 2)
+    of $Mat3: (3, 3)
+    of $Mat4: (4, 4)
     else:
-        assert false, T
+        do_assert false, T
         (0, 0)
 
-macro expand_alias*(m: AnyMat): untyped =
+macro expand_alias*(m: AMat): untyped =
     result = new_nim_node nnkStmtList
     let (w, h) = matrix_size $(get_type_inst m)
     for n in 0..<w*h:
@@ -100,58 +88,54 @@ Mat4.gen_accessors("m00", "m01", "m02", "m03",
                    "m10", "m11", "m12", "m13",
                    "m20", "m21", "m22", "m23",
                    "m30", "m31", "m32", "m33")
-Transform2D.gen_accessors("m00", "m01",
-                          "m10", "m11",
-                          "m20", "m21")
-Transform3D.gen_accessors("m00", "m01", "m02",
-                          "m10", "m11", "m12",
-                          "m20", "m21", "m22",
-                          "m30", "m31", "m32")
 
 #[ -------------------------------------------------------------------- ]#
 
-func `==`*(m1, m2: AnyMat): bool =
+func mat3*(v1, v2, v3: Vec3): Mat3     = [v1, v2, v3]
+func mat4*(v1, v2, v3, v4: Vec4): Mat4 = [v1, v2, v3, v4]
+
+func `==`*(m1, m2: AMat): bool =
     for i in 0..<m1.len:
         if m1[i] != m2[i]:
             return false
     return true
-func `=~`*(m1, m2: AnyMat): bool =
+func `=~`*(m1, m2: AMat): bool =
     for i in 0..<m1.len:
         if not (m1[i] =~ m2[i]):
             return false
     return true
 
-func `-`*[T: AnyMat](m: T): T =
+func `-`*[T: AMat](m: T): T =
     for i in 0..<m.len:
         result[i] = -m[i]
 
-func `+`*[T: AnyMat](m1, m2: T): T {.noInit.} =
+func `+`*[T: AMat](m1, m2: T): T {.noInit.} =
     for i in 0..<m1.len:
         result[i] = m1[i] + m2[i]
-func `+=`*[T: AnyMat](m1: var T; m2: T) = m1 = m1 + m2
+func `+=`*[T: AMat](m1: var T; m2: T) = m1 = m1 + m2
 
-func `-`*[T: AnyMat](m1, m2: T): T {.noInit.} =
+func `-`*[T: AMat](m1, m2: T): T {.noInit.} =
     for i in 0..<m1.len:
         result[i] = m1[i] - m2[i]
-func `-=`*[T: AnyMat](m1: var T; m2: T) = m1 = m1 - m2
+func `-=`*[T: AMat](m1: var T; m2: T) = m1 = m1 - m2
 
-func `*`*[T: AnyMat](m: T; s: float32): T {.noInit.} =
+func `*`*[T: AMat](m: T; s: float32): T {.noInit.} =
     for i in 0..<m.len:
         result[i] = s*m[i]
-func `*`*[T: AnyMat](s: float32; m: T): T = m * s
-func `*=`*(m: var AnyMat; s: float32) = m = m * s
+func `*`*[T: AMat](s: float32; m: T): T = m * s
+func `*=`*(m: var AMat; s: float32) = m = m * s
 
-func `/`*[T: AnyMat](m: T; s: float32): T {.noInit.} =
+func `/`*[T: AMat](m: T; s: float32): T {.noInit.} =
     for i in 0..<m.len:
         result[i] = m[i]/s
-func `/`*[T: AnyMat](s: float32; m: T): T = m / s
-func `/=`*(m: var AnyMat; s: float32) = m = m / s
+func `/`*[T: AMat](s: float32; m: T): T = m / s
+func `/=`*(m: var AMat; s: float32) = m = m / s
 
-func scaled*[T: AnyMat](m: T; s: float32): T =
+func scaled*[T: AMat](m: T; s: float32): T =
     result = m
     for i in 0..<m.len:
         result[i, i] *= s
-func scale*[T: AnyMat](m: var T; s: float32) = m = m.scaled s
+func scale*[T: AMat](m: var T; s: float32) = m = m.scaled s
 
 func transposed*(m: Mat2): Mat2 =
     expand_alias m
@@ -197,7 +181,7 @@ func determinant*(m: Mat4): float32 =
     m02*(m10*t1 - m11*t4 + m13*t5) -
     m03*(m10*t2 - m11*t3 + m12*t5)
 
-func det*(m: AnyMat): float32 = determinant m
+func det*(m: AMat): float32 = determinant m
 
 func inverse*(m: Mat2): Option[Mat2] =
     let det = det m
@@ -269,21 +253,6 @@ func `*`*(a, b: Mat4): Mat4 =
      [a00*b20 + a10*b21 + a20*b22 + a30*b23, a01*b20 + a11*b21 + a21*b22 + a31*b23, a02*b20 + a12*b21 + a22*b22 + a32*b23, a03*b20 + a13*b21 + a23*b22 + a33*b23],
      [a00*b30 + a10*b31 + a20*b32 + a30*b33, a01*b30 + a11*b31 + a21*b32 + a31*b33, a02*b30 + a12*b31 + a22*b32 + a32*b33, a03*b30 + a13*b31 + a23*b32 + a33*b33]]
 
-func `*`*(a, b: Transform2D): Transform2D =
-    expand_alias a
-    expand_alias b
-    [[a00*b00 + a10*b01      , a01*b00 + a11*b01      ],
-     [a00*b10 + a10*b11      , a01*b10 + a11*b11      ],
-     [a00*b20 + a10*b21 + a20, a01*b20 + a11*b21 + a21]]
-
-func `*`*(a, b: Transform3D): Transform3D =
-    expand_alias a
-    expand_alias b
-    [[a00*b00 + a10*b01 + a20*b02      , a01*b00 + a11*b01 + a21*b02      , a02*b00 + a12*b01 + a22*b02      ],
-     [a00*b10 + a10*b11 + a20*b12      , a01*b10 + a11*b11 + a21*b12      , a02*b10 + a12*b11 + a22*b12      ],
-     [a00*b20 + a10*b21 + a20*b22      , a01*b20 + a11*b21 + a21*b22      , a02*b20 + a12*b21 + a22*b22      ],
-     [a00*b30 + a10*b31 + a20*b32 + a30, a01*b30 + a11*b31 + a21*b32 + a31, a02*b30 + a12*b31 + a22*b32 + a32]]
-
 func `*`*(m: Mat2; v: Vec2): Vec2 =
     expand_alias m
     [m00*v.x + m10*v.y,
@@ -308,16 +277,16 @@ func `*`*(m: Mat4; v: Vec3): Vec3 =
      m01*v.x + m11*v.y + m21*v.z,
      m02*v.x + m12*v.y + m22*v.z]
 
-func translation*(v: Vec2): Transform2D =
-    [[1.0, 0.0],
-     [0.0, 1.0],
-     [v.x, v.y]]
-
-func translation*(v: Vec3): Transform3D =
+func translation*(v: Vec2): Mat3 =
     [[1.0, 0.0, 0.0],
      [0.0, 1.0, 0.0],
-     [0.0, 0.0, 1.0],
-     [v.x, v.y, v.z]]
+     [v.x, v.y, 1.0]]
+
+func translation*(v: Vec3): Mat4 =
+    [[1.0, 0.0, 0.0, 0.0],
+     [0.0, 1.0, 0.0, 0.0],
+     [0.0, 0.0, 1.0, 0.0],
+     [v.x, v.y, v.z, 1.0]]
 
 func translate*(m: var Mat3; v: Vec2) =
     expand_alias m
@@ -333,16 +302,16 @@ func translate*(m: var Mat4; v: Vec3) =
 func translated*(m: Mat3; v: Vec2): Mat3 = result = m; result.translate v
 func translated*(m: Mat4; v: Vec3): Mat4 = result = m; result.translate v
 
-func dilation*(v: Vec2): Transform2D =
-    [[v.x, 0.0],
-     [0.0, v.y],
-     [0.0, 0.0]]
-
-func dilation*(v: Vec3): Transform3D =
+func dilation*(v: Vec2): Mat3 =
     [[v.x, 0.0, 0.0],
      [0.0, v.y, 0.0],
-     [0.0, 0.0, v.z],
-     [0.0, 0.0, 0.0]]
+     [0.0, 0.0, 1.0]]
+
+func dilation*(v: Vec3): Mat4 =
+    [[v.x, 0.0, 0.0, 0.0],
+     [0.0, v.y, 0.0, 0.0],
+     [0.0, 0.0, v.z, 0.0],
+     [0.0, 0.0, 0.0, 1.0]]
 
 func scale*(m: var Mat3; v: Vec2) =
     expand_alias m
@@ -374,7 +343,7 @@ func scale*(m: var Mat4; v: Vec3) =
 func scaled*(m: Mat3; v: Vec2): Mat3 = result = m; result.scale v
 func scaled*(m: Mat4; v: Vec3): Mat4 = result = m; result.scale v
 
-func rotation*(α: float32; v: Vec3): Transform3D =
+func rotation*(α: float32; v: Vec3): Mat4 =
     ## CCW rotation
     ## Axis vector needs to be normalized before rotation
     ngm_assert (v.mag =~ 1), "Axis vector should be normalized before rotation"
@@ -382,33 +351,33 @@ func rotation*(α: float32; v: Vec3): Transform3D =
     let c  = cos α
     let s  = sin α
     let ci = 1 - c
-    [[v.x*v.x*ci + c    , v.x*v.y*ci - v.z*s, v.x*v.z*ci + v.y*s],
-     [v.y*v.x*ci + v.z*s, v.y*v.y*ci + c    , v.y*v.z*ci - v.x*s],
-     [v.z*v.x*ci - v.y*s, v.z*v.y*ci + v.x*s, v.z*v.z*ci + c    ],
-     [0                 , 0                 , 0                 ]]
+    [[v.x*v.x*ci + c    , v.x*v.y*ci - v.z*s, v.x*v.z*ci + v.y*s, 0],
+     [v.y*v.x*ci + v.z*s, v.y*v.y*ci + c    , v.y*v.z*ci - v.x*s, 0],
+     [v.z*v.x*ci - v.y*s, v.z*v.y*ci + v.x*s, v.z*v.z*ci + c    , 0],
+     [0                 , 0                 , 0                 , 1]]
 
-func x_rotation*(α: float32): Transform3D =
+func x_rotation*(α: float32): Mat4 =
     let c = cos α
     let s = sin α
-    [[1, 0,  0],
-     [0, c, -s],
-     [0, s,  c],
-     [0, 0,  0]]
+    [[1, 0,  0, 0],
+     [0, c, -s, 0],
+     [0, s,  c, 0],
+     [0, 0,  0, 1]]
 
-func y_rotation*(α: float32): Transform3D =
+func y_rotation*(α: float32): Mat4 =
     let c = cos α
     let s = sin α
-    [[ c, 0, s],
-     [ 0, 1, 0],
-     [-s, 0, c],
-     [ 0, 0, 0]]
+    [[ c, 0, s, 0],
+     [ 0, 1, 0, 0],
+     [-s, 0, c, 0],
+     [ 0, 0, 0, 1]]
 
-func z_rotation*(α: float32): Transform3D =
+func z_rotation*(α: float32): Mat4 =
     let c = cos α
     let s = sin α
-    [[c, -s, 0],
-     [s,  c, 0],
-     [0,  0, 1],
-     [0,  0, 0]]
+    [[c, -s, 0, 0],
+     [s,  c, 0, 0],
+     [0,  0, 1, 0],
+     [0,  0, 0, 1]]
 
 {.pop.}
