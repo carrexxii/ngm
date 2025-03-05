@@ -1,7 +1,7 @@
 version     = "0.0.1"
 author      = "carrexxii"
 description = "Nim maths library designed for games and graphics"
-license     = "Apache 2.0"
+license     = "AGPLv3"
 
 #[ -------------------------------------------------------------------- ]#
 
