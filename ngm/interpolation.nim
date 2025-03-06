@@ -23,8 +23,8 @@ func ease_in_out*[T: SomeFloat](x: T; exp = 2): T =
     else:
         1 - 0.5*(-2*x + 2)^exp
 
-func ease_in_sine*[T: SomeFloat](x: T): T     = 1 - cos(π÷2*x)
-func ease_out_sine*[T: SomeFloat](x: T): T    = sin(π÷2*x)
+func ease_in_sine*[T: SomeFloat](x: T): T     = 1 - cos(x*π/2)
+func ease_out_sine*[T: SomeFloat](x: T): T    = sin(x*π/2)
 func ease_in_out_sine*[T: SomeFloat](x: T): T = 0.5 - 0.5*cos(x*π)
 
 func ease_in_circular*[T: SomeFloat](x: T): T  = 1 - sqrt(1 - x^2)

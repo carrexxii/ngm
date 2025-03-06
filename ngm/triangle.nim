@@ -22,7 +22,13 @@ func tri*[T](a, b, c: AVec2[T]): ATri[T] =
 func area2*[T](tri: ATri[T]): T =
     (tri.b.x - tri.a.x)*(tri.c.y - tri.a.y) -
     (tri.b.y - tri.a.y)*(tri.c.x - tri.a.x)
+func area2*[T](a, b, c: AVec2[T]): T = area2 tri(a, b, c)
+
 func area*[T](tri: ATri[T]): T      = 0.5*area2 tri
 func area*[T](a, b, c: AVec2[T]): T = 0.5*area2 tri(a, b, c)
+
+func is_ccw*[T](tri: ATri[T]): bool =
+    tri.area2 > 0
+func is_ccw*[T](a, b, c: AVec2[T]): bool = is_ccw tri(a, b, c)
 
 {.pop.}

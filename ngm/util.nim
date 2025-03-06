@@ -4,15 +4,14 @@
 
 import std/math, common, borrows
 from std/strutils import parse_float
-export sqrt, pow, `^`
+export Pi, Tau, sqrt, pow, `^`
 
 type
     Degrees* = distinct float
     Radians* = distinct float
 
-const π*   = Radians Pi
-const π⋅2* = Radians Pi*2
-const π÷2* = Radians Pi/2
+const π* = Radians Pi
+const τ* = Radians Tau
 
 proc `'deg`*(x: string): Degrees {.compileTime.} = Degrees parse_float x
 proc `'°`*(x: string): Degrees   {.compileTime.} = Degrees parse_float x

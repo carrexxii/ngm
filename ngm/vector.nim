@@ -46,7 +46,7 @@ type
     Vec3* = Vec3F32
     Vec4* = Vec4F32
 
-    AVec* = AVec2 | AVec3 | AVec4
+    AVec*[T] = AVec2[T] | AVec3[T] | AVec4[T]
 
 const VectorFields = ["xyzw"]
 type Swizzleable = AVec
