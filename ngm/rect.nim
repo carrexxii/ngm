@@ -5,7 +5,7 @@
 import common, vector
 
 type
-    ARect*[T: SomeNumber] = distinct array[4, T]
+    ARect*[T] = distinct array[4, T]
 
     RectF32* = ARect[float32]
     RectF64* = ARect[float64]
@@ -19,18 +19,17 @@ type
 
     Rect* = RectF32
 
-    Cube*[T] = object
-        x*, y*, z*: T
-        w*, h*, d*: T
+func `[]`*[T](r: ARect[T]; i: SomeInteger): T           = array[4, T](r)[i]
+func `[]`*[T](r: var ARect[T]; i: SomeInteger): var T   = cast[ptr UncheckedArray[T]](r.addr)[i]
+func `[]=`*[T](r: var ARect[T]; i: SomeInteger; val: T) = array[4, T](r)[i] = val
 
-func `[]`*[T](c: ARect[T]; i: int): T           = array[4, T](c)[i]
-func `[]=`*[T](c: var ARect[T]; i: int; val: T) = array[4, T](c)[i] = val
+func to_arr*[T](r: ARect[T]): array[4, T] = array[4, T] r
 
 const VectorFields = ["xywh"]
 type Swizzleable = ARect
 include swizzle
 
-func `$`*[T](r: ARect[T]): string = &"[{r.x}, {r.y}, {r.w}, {r.h}]"
+func `$`*(r: ARect): string = &"[{r.x}, {r.y}, {r.w}, {r.h}]"
 
 #[ -------------------------------------------------------------------- ]#
 
@@ -54,6 +53,7 @@ func recti64*[T](r: ARect[T]): RectI64 = RectI64 [int64 r.x, int64 r.y, int64 r.
 func rectu16*[T](r: ARect[T]): RectU16 = RectU16 [uint16 r.x, uint16 r.y, uint16 r.w, uint16 r.h]
 func rectu32*[T](r: ARect[T]): RectU32 = RectU32 [uint32 r.x, uint32 r.y, uint32 r.w, uint32 r.h]
 func rectu64*[T](r: ARect[T]): RectU64 = RectU64 [uint64 r.x, uint64 r.y, uint64 r.w, uint64 r.h]
+func rect*[T](r: ARect[T]): Rect = frect r
 
 func rect_from_corners*[T](p1, p2: AVec2[T]): ARect[T] =
     ## The vertices are reordered to get a positive size
@@ -63,6 +63,12 @@ func rect_from_corners*[T](p1, p2: AVec2[T]): ARect[T] =
 
 func rect_from_pos_and_size*[T](pos, sz: AVec2[T]): ARect[T] =
     ARect[T] [pos.x, pos.y, sz.x, sz.y]
+
+func to_vtxs*[T](r: ARect[T]): array[4, AVec2[T]] =
+    [[r.x      , r.y      ],
+     [r.x      , r.y + r.h],
+     [r.x + r.w, r.y + r.h],
+     [r.x + r.w, r.y      ]]
 
 func trunc*[T](r: ARect[T]): ARect[T] = ARect[T] [trunc r.x, trunc r.y, trunc r.w, trunc r.h]
 func round*[T](r: ARect[T]): ARect[T] = ARect[T] [round r.x, round r.y, round r.w, round r.h]
@@ -76,7 +82,7 @@ func `+`*[T](r: ARect[T]; v: Vec2): ARect[T] =
 func `-`*[T](r: ARect[T]; v: Vec2): ARect[T] =
     ## Subtracts `v` from the rect's position
     ARect[T] [r.x - v.x, r.y - v.y, r.w, r.h]
-func `*`*[T](r: ARect[T]; s: float32): ARect[T] =
+func `*`*[T](r: ARect[T]; s: float32): ARect[T] = # TODO: fix s's type
     ## Multiplies the size of the rect by `s`
     ARect[T] [r.x, r.y, s*r.w, s*r.h]
 func `/`*[T](r: ARect[T]; s: float32): ARect[T] =
@@ -118,21 +124,34 @@ func contains*[T](r: ARect[T]; p: AVec2[T]): bool =
     (p.x >= r.x) and (p.x <= r.x + r.w) and
     (p.y >= r.y) and (p.y <= r.y + r.h)
 
-func centre*[T](r: ARect[T]): AVec2[T] =
-    [r.x + T (0.5*float r.w),
-     r.y + T (0.5*float r.h)]
+func centred*[T](r: ARect[T]): ARect[T] =
+    ARect[T] [r.x + T (0.5*float r.w),
+              r.y + T (0.5*float r.h),
+              r.w, r.h]
+func centre*[T](r: var ARect[T]) = r = centred r
 
-func vcentre*[T](r: ARect[T]; min, max: SomeNumber): ARect[T] =
+func vcentred*[T](r: ARect[T]; min, max: SomeNumber): ARect[T] =
     result = r
     result.y = T(min + 0.5*(max - min)) - 0.5*r.h
+func vcentred*[T](r: ARect[T]; range: Slice[T]): ARect[T] = r.vcentred range.a, range.b
+func vcentre*[T](r: var ARect[T]; min, max: SomeNumber)   = r = r.vcentred(min, max)
+func vcentre*[T](r: var ARect[T]; range: Slice[T])        = r = r.vcentred range
 
-func hcentre*[T](r: ARect[T]; min, max: SomeNumber): ARect[T] =
+func hcentred*[T](r: ARect[T]; min, max: SomeNumber): ARect[T] =
     result = r
     result.x = T(min + 0.5*(max - min)) - 0.5*r.w
+func hcentred*[T](r: ARect[T]; range: Slice[T]): ARect[T] = r.hcentred range.a, range.b
+func hcentre*[T](r: var ARect[T]; min, max: SomeNumber)   = r = r.hcentred(min, max)
+func hcentre*[T](r: var ARect[T]; range: Slice[T])        = r = r.hcentred range
 
 # TODO: test swizzle replacement
-func expand*[T](r: ARect[T]; v: AVec2): ARect[T] =
+func expanded*[T](r: ARect[T]; v: AVec2): ARect[T] =
     ARect[T] [r.x - T v.x, r.y - T v.y,
               r.w + T v.x, r.h + T v.y]
+func expand*[T](r: var ARect[T]; v: AVec2) = r = r.expanded v
+
+func area*[T](r: ARect[T]): T = r.w * r.h
+
+func bottom_right*[T](r: ARect[T]; sz: AVec2[T]): ARect[T] = rect(r.x + r.w - sz.x, r.y + r.h - sz.y, sz.x, sz.y)
 
 {.pop.}

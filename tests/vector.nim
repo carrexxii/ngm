@@ -85,3 +85,11 @@ test "Swizzling":
         v1 =~ vec(1, 1, 1)
         v2 =~ vec(6, 6, 5)
         v3 =~ vec(2, 1, 3)
+
+    v1.x -= 1
+    v2.y -= 1
+    v3.z -= 1
+    check:
+        v1 =~ vec(0, 1, 1)
+        v2 =~ vec(6, 5, 5)
+        v3 =~ vec(2, 1, 2)

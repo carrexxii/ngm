@@ -48,6 +48,10 @@ type
 
     AVec*[T] = AVec2[T] | AVec3[T] | AVec4[T]
 
+converter vec2_to_arr*[T](v: AVec2[T]): array[2, T] = v
+converter vec3_to_arr*[T](v: AVec3[T]): array[3, T] = v
+converter vec4_to_arr*[T](v: AVec4[T]): array[4, T] = v
+
 const VectorFields = ["xyzw"]
 type Swizzleable = AVec
 include swizzle
@@ -97,6 +101,10 @@ func vec3*[T](v: AVec4): AVec3[T] =
 func vec*(x, y: distinct SomeNumber): Vec2       = [float32 x, float32 y]
 func vec*(x, y, z: distinct SomeNumber): Vec3    = [float32 x, float32 y, float32 z]
 func vec*(x, y, z, w: distinct SomeNumber): Vec4 = [float32 x, float32 y, float32 z, float32 w]
+
+func vec_to*[T](v: AVec2): AVec2[T] = [T v.x, T v.y]
+func vec_to*[T](v: AVec3): AVec3[T] = [T v.x, T v.y, T v.z]
+func vec_to*[T](v: AVec4): AVec4[T] = [T v.x, T v.y, T v.z, T v.w]
 
 func `==`*[T](v, u: AVec2[T]): bool = (v.x == u.x) and (v.y == u.y)
 func `==`*[T](v, u: AVec3[T]): bool = (v.x == u.x) and (v.y == u.y) and (v.z == u.z)
